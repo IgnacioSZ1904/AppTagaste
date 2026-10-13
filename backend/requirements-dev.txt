@@ -1,0 +1,2 @@
+-r requirements.txt
+# Herramientas de desarrollo (pytest, ruff...) se añaden en la feature 03

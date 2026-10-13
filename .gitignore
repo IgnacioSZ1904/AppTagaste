@@ -1,4 +1,21 @@
+# Local (no se sube)
+CLAUDE.md
+
+# Entorno
 .env
-__pycache__/
 .venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Node
 node_modules/
+
+# IDE / SO
+.idea/
+.vscode/
+.DS_Store
