@@ -38,6 +38,37 @@ docker compose exec api alembic downgrade -1                          # Deshace 
 
 Cada modelo nuevo se importa en `backend/app/models/__init__.py` para que `--autogenerate` lo detecte.
 
+## Autenticación con Google
+
+Coordinadores y monitores entran con su cuenta de Google. Solo pueden entrar los emails que un coordinador haya dado de alta.
+
+**1. Crear el OAuth Client ID** (una vez, gratis):
+1. Entra en [Google Cloud Console](https://console.cloud.google.com/) y crea un proyecto (p. ej. `AppTagaste`).
+2. *APIs y servicios → Pantalla de consentimiento de OAuth*: tipo **Externo**, nombre de la app y tu email; añade tu cuenta como usuario de prueba.
+3. *APIs y servicios → Credenciales → Crear credenciales → ID de cliente de OAuth*: tipo **Aplicación web**, origen autorizado `http://localhost:5173`.
+4. Copia el *ID de cliente* (`…apps.googleusercontent.com`) en `GOOGLE_CLIENT_ID` de tu `.env` y recrea la API: `docker compose up -d --force-recreate api`.
+
+**2. Crear el primer coordinador** (con tu email de Google):
+
+```bash
+docker compose exec api alembic upgrade head
+docker compose exec api python -m app.cli create-coordinator --email tu@gmail.com --name "Tu Nombre"
+```
+
+**3. Probar la API sin frontend:** genera un token de desarrollo y pégalo en el botón *Authorize* de http://localhost:8000/docs:
+
+```bash
+docker compose exec api python -m app.cli dev-token --email tu@gmail.com
+```
+
+`dev-token` no funciona con `ENVIRONMENT=production`.
+
+| Endpoint | Quién |
+|----------|-------|
+| `POST /api/v1/auth/google` | Público (recibe el token de Google y devuelve el de la API) |
+| `GET /api/v1/auth/me` | Cualquier usuario autenticado |
+| `GET/POST /api/v1/users`, `PATCH /api/v1/users/{id}` | Coordinador |
+
 ## Tests y calidad
 
 Con los contenedores levantados:

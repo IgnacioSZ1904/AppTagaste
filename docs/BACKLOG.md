@@ -21,9 +21,9 @@ Prioridad: **P0** imprescindible MVP · **P1** importante · **P2** deseable
 
 | # | Feature | Prioridad | Estado | Notas |
 |---|---------|-----------|--------|-------|
-| 05 | `auth-usuarios-roles` | P0 | [ ] | Modelo Usuario, login JWT, hash de contraseñas, roles coordinador/monitor, dependencias de permisos |
+| 05 | `auth-usuarios-roles` | P0 | [x] | Login solo con Google (ID token verificado + lista blanca de emails) y JWT propio de 8 h, roles coordinador/monitor, `/auth/me`, gestión de usuarios, comandos `create-coordinator` y `dev-token` |
 | 06 | `eventos-crud` | P0 | [ ] | Modelo Evento/Reunión (fecha, tipo, grupo), CRUD solo coordinador |
-| 07 | `calendario-frontend` | P0 | [ ] | Login en front, vista mensual y lista, filtros por tipo |
+| 07 | `calendario-frontend` | P0 | [ ] | Login con botón de Google (necesita `GOOGLE_CLIENT_ID`), vista mensual y lista, filtros por tipo |
 | 08 | `despliegue-gratuito` | P0 | [ ] | Render (API) + Postgres gratuita + Vercel (front), variables de entorno, CORS |
 | 09 | `exportacion-ical` | P1 | [ ] | Feed iCal por grupo para suscribirse desde el móvil |
 
