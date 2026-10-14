@@ -22,13 +22,26 @@ cp .env.example .env              # 1. Crea tu .env y cambia la contraseña
 docker compose up --build         # 2. Levanta la BD y la API
 ```
 
-3. Comprueba que funciona: http://localhost:8000/api/v1/health → `{"status":"ok"}`
+3. Comprueba que funciona: http://localhost:8000/api/v1/health → `{"status":"ok","db":"ok"}`
 4. Documentación interactiva de la API: http://localhost:8000/docs
+
+## Migraciones (Alembic)
+
+Con los contenedores levantados:
+
+```bash
+docker compose exec api alembic upgrade head                          # Aplica las migraciones pendientes
+docker compose exec api alembic revision --autogenerate -m "mensaje"  # Crea una migración desde los modelos
+docker compose exec api alembic downgrade -1                          # Deshace la última
+```
+
+Cada modelo nuevo se importa en `backend/app/models/__init__.py` para que `--autogenerate` lo detecte.
 
 ## Estructura
 
 ```
 backend/
+├── alembic/           # Migraciones de la BD
 └── app/
     ├── api/v1/        # Routers y endpoints HTTP
     ├── core/          # Configuración (pydantic-settings)

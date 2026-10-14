@@ -19,3 +19,15 @@
 - Verificado en la nube con uvicorn (sin Docker): `/api/v1/health` → 200 `{"status":"ok"}`, `/docs` → 200, `/health` → 404
 - Docker no se pudo probar en la nube (límite de Docker Hub, 429)
 - Decisión: a partir de aquí Claude solo edita ficheros; Ignacio ejecuta git y docker a mano (T1.1, T3.x, T4.1, T4.3)
+
+## [2026-10-13 19:05] — Tareas manuales completadas (Ignacio)
+- T1.1 rama `feature/01-estructura-repo-docker`, T4.1 brief movido a `docs/brief.md`, T3.1–T3.3 verificadas en local, T4.3 commits y push
+- Feature mergeada en `develop`
+
+## [2026-10-13 19:10] — Cierre del evolutivo
+- Generada `01-estructura-repo-docker-review.html`
+- Propuesta de mejora: no existe `docs/templates/review-template.html`; la review usa un estilo propio sencillo en tema claro. Crear la template para unificar las siguientes reviews
+- Resumen: backend organizado por capas, configuración centralizada, API en `/api/v1`, dependencias fijadas, `.env` fuera de Git y README de arranque
+
+## [2026-10-13 19:15] — Review HTML descartada
+- Ignacio no quiere las reviews HTML: se elimina `01-estructura-repo-docker-review.html` y no se generarán en próximas features
