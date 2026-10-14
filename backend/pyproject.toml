@@ -1,0 +1,18 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# Las migraciones las genera Alembic
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+# E/F: errores básicos, I: orden de imports, UP: sintaxis moderna, B: bugs comunes
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+# La carpeta alembic/ local no es el paquete alembic
+known-first-party = ["app"]
+known-third-party = ["alembic"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

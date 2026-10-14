@@ -37,11 +37,24 @@ docker compose exec api alembic downgrade -1                          # Deshace 
 
 Cada modelo nuevo se importa en `backend/app/models/__init__.py` para que `--autogenerate` lo detecte.
 
+## Tests y calidad
+
+Con los contenedores levantados:
+
+```bash
+docker compose exec api pytest -v              # Tests (usan la BD apptagaste_test, se crea sola)
+docker compose exec api ruff check .           # Linter
+docker compose exec api ruff format .          # Formatea el código
+```
+
+GitHub Actions ejecuta el linter y los tests en cada push a `develop`/`master` y en cada PR.
+
 ## Estructura
 
 ```
 backend/
 ├── alembic/           # Migraciones de la BD
+├── tests/             # Tests con pytest
 └── app/
     ├── api/v1/        # Routers y endpoints HTTP
     ├── core/          # Configuración (pydantic-settings)
