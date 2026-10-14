@@ -69,6 +69,16 @@ docker compose exec api python -m app.cli dev-token --email tu@gmail.com
 | `GET /api/v1/auth/me` | Cualquier usuario autenticado |
 | `GET/POST /api/v1/users`, `PATCH /api/v1/users/{id}` | Coordinador |
 
+## Eventos
+
+Eventos y reuniones del calendario. Tipos: `reunion`, `convivencia`, `eucaristia`, `otro`. Las fechas van en hora de España y formato de 24 h, `AAAA-MM-DD HH:MM` (p. ej. `2026-11-13 17:00`), tanto al enviarlas como al recibirlas; el fin debe ser posterior al inicio. En la BD se guardan con zona horaria (`TIMESTAMPTZ`), así que el cambio de hora y el iCal salen bien.
+
+| Endpoint | Quién |
+|----------|-------|
+| `GET /api/v1/events?from=&to=&type=` | Cualquier usuario autenticado (devuelve los que se solapan con el rango, ordenados por inicio) |
+| `GET /api/v1/events/{id}` | Cualquier usuario autenticado |
+| `POST /api/v1/events`, `PATCH /api/v1/events/{id}`, `DELETE /api/v1/events/{id}` | Coordinador |
+
 ## Tests y calidad
 
 Con los contenedores levantados:
