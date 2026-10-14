@@ -1,4 +1,5 @@
 from collections.abc import Callable, Iterator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from app.core.config import get_settings
 from app.core.security import create_access_token
 from app.db.session import get_db
 from app.main import app
+from app.models.event import Event, EventType
 from app.models.user import Role, User
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -94,6 +96,27 @@ def make_user(db: Session) -> Callable[..., User]:
         return user
 
     return _make_user
+
+
+@pytest.fixture
+def make_event(db: Session) -> Callable[..., Event]:
+    """Crea eventos de prueba: make_event(starts_at=..., hours=2, type=EventType.REUNION)."""
+
+    def _make_event(
+        starts_at: datetime | None = None,
+        hours: int = 2,
+        type: EventType = EventType.REUNION,
+        title: str = "Reunión de prueba",
+    ) -> Event:
+        start = starts_at or datetime(2026, 11, 7, 17, 0, tzinfo=UTC)
+        event = Event(
+            title=title, type=type, starts_at=start, ends_at=start + timedelta(hours=hours)
+        )
+        db.add(event)
+        db.commit()
+        return event
+
+    return _make_event
 
 
 def auth_headers(user: User) -> dict[str, str]:

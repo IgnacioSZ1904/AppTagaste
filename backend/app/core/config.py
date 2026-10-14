@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     environment: str = "development"
     api_v1_prefix: str = "/api/v1"
     database_url: str
+    # Zona horaria de los eventos: las fechas sin zona se interpretan en ella
+    timezone: str = "Europe/Madrid"
 
     # Autenticación
     secret_key: str = DEV_SECRET_KEY
