@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
@@ -10,8 +10,10 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.security import create_access_token
 from app.db.session import get_db
 from app.main import app
+from app.models.user import Role, User
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 
@@ -70,3 +72,29 @@ def client(db: Session) -> Iterator[TestClient]:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def make_user(db: Session) -> Callable[..., User]:
+    """Crea usuarios de prueba: make_user(role=Role.MONITOR, email=...)."""
+    counter = iter(range(1, 10_000))
+
+    def _make_user(
+        role: Role = Role.COORDINADOR, email: str | None = None, is_active: bool = True
+    ) -> User:
+        n = next(counter)
+        user = User(
+            email=email or f"user{n}@ejemplo.com",
+            full_name=f"Usuario {n}",
+            role=role,
+            is_active=is_active,
+        )
+        db.add(user)
+        db.commit()
+        return user
+
+    return _make_user
+
+
+def auth_headers(user: User) -> dict[str, str]:
+    return {"Authorization": f"Bearer {create_access_token(user.id)}"}
