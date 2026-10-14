@@ -13,9 +13,9 @@ Prioridad: **P0** imprescindible MVP · **P1** importante · **P2** deseable
 | # | Feature | Prioridad | Estado | Notas |
 |---|---------|-----------|--------|-------|
 | 01 | `estructura-repo-docker` | P0 | [x] | Capas en `app/`, config con pydantic-settings, API en `/api/v1`, README. Mergeada en `develop` |
-| 02 | `base-datos-alembic` | P0 | [x] | SQLAlchemy síncrono + `get_db()`, Alembic con baseline `0001`, `/health` comprueba la BD |
-| 03 | `calidad-ci` | P0 | [ ] | pytest + BD de test, ruff, GitHub Actions (lint + tests) |
-| 04 | `frontend-base` | P0 | [ ] | React (Vite), router, layout responsive móvil, cliente API |
+| 02 | `base-datos-alembic` | P0 | [x] | SQLAlchemy síncrono + `get_db()`, Alembic con baseline `0001`, `/health` comprueba la BD. Mergeada en `develop` |
+| 03 | `calidad-ci` | P0 | [x] | pytest con BD `_test` y rollback por test, ruff, GitHub Actions (lint + test). Mergeada en `develop` |
+| 04 | `frontend-base` | P0 | [x] | Vite + React 19 + TS, Tailwind 4, React Router, TanStack Query sobre `apiFetch`, proxy `/api`, oxlint + Prettier + Vitest, job `frontend` en CI |
 
 ## Fase 1 — MVP (semana 2)
 

@@ -40,7 +40,7 @@ Tener una red de seguridad automática: tests con pytest contra una BD de test, 
 - [x] ¿CI en push a `develop`/`master` y en todas las PR? Propuesta: **sí**. → Sí.
 
 ## 7. Criterios de aceptación
-- [ ] `docker compose exec api pytest` pasa en local usando `apptagaste_test`.
-- [ ] `docker compose exec api ruff check .` y `ruff format --check .` pasan.
-- [ ] El workflow de GitHub Actions sale en verde en la PR de esta feature.
-- [ ] README documenta tests y linter.
+- [x] `docker compose exec api pytest` pasa en local usando `apptagaste_test`.
+- [x] `docker compose exec api ruff check .` y `ruff format --check .` pasan.
+- [x] El workflow de GitHub Actions sale en verde en la PR de esta feature.
+- [x] README documenta tests y linter.

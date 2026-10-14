@@ -1,6 +1,6 @@
 # Tareas pendientes: 03-calidad-ci
 
-> Estado: 🟡 En curso
+> Estado: ✅ Completada
 > Última actualización: 2026-10-14
 
 ## Bloque 1 — Preparación
@@ -17,12 +17,12 @@
 - [x] T2.5 — `.github/workflows/ci.yml`: jobs `lint` y `test` (Postgres 16 como servicio)
 
 ## Bloque 3 — Pruebas (manual, Ignacio)
-- [ ] T3.1 — `docker compose up --build`
-- [ ] T3.2 — `docker compose exec api pytest -v` → verde
-- [ ] T3.3 — `docker compose exec api ruff check .` y `ruff format --check .` → sin errores
-- [ ] T3.4 — Push y PR a `develop` → GitHub Actions en verde
+- [x] T3.1 — `docker compose up --build`
+- [x] T3.2 — `docker compose exec api pytest -v` → verde
+- [x] T3.3 — `docker compose exec api ruff check .` y `ruff format --check .` → sin errores
+- [x] T3.4 — Push y PR a `develop` → GitHub Actions en verde
 
 ## Bloque 4 — Documentación
 - [x] T4.1 — README: sección "Tests y calidad"
-- [ ] T4.2 — Devlog, lecciones y BACKLOG
-- [ ] T4.3 (manual, Ignacio) — Merge de la PR
+- [x] T4.2 — Devlog, lecciones y BACKLOG
+- [x] T4.3 (manual, Ignacio) — Merge de la PR
