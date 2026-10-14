@@ -1,2 +1,5 @@
 -r requirements.txt
-# Herramientas de desarrollo (pytest, ruff...) se añaden en la feature 03
+# Herramientas de desarrollo: tests y linter
+pytest==9.1.1
+httpx2==2.13.1
+ruff==0.17.0
