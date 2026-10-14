@@ -1,12 +1,13 @@
 import { screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
 
-import { renderRoute } from '@/test/render'
+import { coordinator, meHandler, mockApi, renderRoute } from '@/test/render'
 
-it('muestra la página 404 en una ruta desconocida', () => {
-  renderRoute('/no-existe')
+it('muestra la página 404 en una ruta desconocida', async () => {
+  mockApi(meHandler(coordinator))
+  renderRoute('/no-existe', { token: 't' })
   expect(
-    screen.getByRole('heading', { name: 'Página no encontrada' }),
+    await screen.findByRole('heading', { name: 'Página no encontrada' }),
   ).toBeInTheDocument()
   expect(
     screen.getByRole('link', { name: 'Volver al inicio' }),

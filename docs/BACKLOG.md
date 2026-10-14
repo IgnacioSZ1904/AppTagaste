@@ -19,22 +19,25 @@ Prioridad: **P0** imprescindible MVP · **P1** importante · **P2** deseable
 
 ## Fase 1 — MVP (semana 2)
 
+Orden: 07 → 19 → 20 → 08 → 09.
+
 | # | Feature | Prioridad | Estado | Notas |
 |---|---------|-----------|--------|-------|
 | 05 | `auth-usuarios-roles` | P0 | [x] | Login solo con Google (ID token verificado + lista blanca de emails) y JWT propio de 8 h, roles coordinador/monitor, `/auth/me`, gestión de usuarios, comandos `create-coordinator` y `dev-token` |
 | 06 | `eventos-crud` | P0 | [x] | Modelo `Event` (tipos reunion/convivencia/eucaristia/otro, inicio y fin obligatorios), CRUD solo coordinador, lectura para autenticados, filtros por rango (solape) y tipo, fechas en hora de España `AAAA-MM-DD HH:MM`. El grupo se añade en la 10 |
-| 07 | `calendario-frontend` | P0 | [ ] | Login con botón de Google (necesita `GOOGLE_CLIENT_ID`), vista mensual y lista, filtros por tipo. La API de eventos usa fechas `AAAA-MM-DD HH:MM` en hora de España |
+| 07 | `calendario-frontend` | P0 | [x] | Login con botón de Google y JWT en `localStorage` (401 → login), rutas protegidas, FullCalendar v7 a pantalla completa, vista "Próximos" (15 eventos), filtros por tipo, CRUD de eventos en modal para coordinador, tema blanco y rojo con el escudo |
+| 19 | `roles-admin-usuario` | P0 | [ ] | Roles **admin** (todo + gestión de usuarios), **coordinador** (CRUD de eventos), **monitor** y **usuario** (solo ver el calendario; alta automática al entrar con Google, sin lista blanca). Solo el admin gestiona usuarios. Migración de los coordinadores actuales |
+| 20 | `gestion-usuarios-frontend` | P0 | [ ] | Pantalla del admin: lista de usuarios, cambiar rol (coordinador/monitor/usuario), activar/desactivar, dar de alta por email |
 | 08 | `despliegue-gratuito` | P0 | [ ] | Render (API) + Postgres gratuita + Vercel (front), variables de entorno, CORS |
 | 09 | `exportacion-ical` | P1 | [ ] | Feed iCal por grupo para suscribirse desde el móvil |
 
-## Fase 2 — Grupos, inscripciones y asistencia
+## Fase 2 — Grupos y asistencia
 
 | # | Feature | Prioridad | Estado | Notas |
 |---|---------|-----------|--------|-------|
-| 10 | `grupos-gestion` | P0 | [ ] | Modelo Grupo, asignar monitores y miembros (coordinador) |
-| 11 | `inscripciones` | P0 | [ ] | Apuntarse/desapuntarse, plazas ilimitadas, recuento de inscritos |
-| 12 | `pase-de-lista` | P0 | [ ] | Monitor marca "asistió" vs "inscrito", por grupo |
-| 13 | `estadisticas-basicas` | P2 | [ ] | Asistencia por grupo y reunión para coordinador |
+| 10 | `grupos-gestion` | P0 | [ ] | Modelo Grupo con sus monitores y su lista de niños (solo nombre, sin cuenta). Los monitores gestionan los niños de su grupo; el admin crea grupos y asigna monitores |
+| 12 | `pase-de-lista` | P0 | [ ] | En cada evento, el monitor marca qué niños de su grupo asistieron |
+| 13 | `estadisticas-basicas` | P2 | [ ] | Asistencia por grupo y evento para admin y coordinador; informes exportables |
 
 ## Fase 3 — Biblioteca de recursos
 
@@ -46,23 +49,15 @@ Prioridad: **P0** imprescindible MVP · **P1** importante · **P2** deseable
 | 17 | `biblioteca-frontend` | P1 | [ ] | Buscador, filtros y vista previa |
 | 18 | `etiquetas-con-llm` | P2 | [ ] | Sugerencia automática de etiquetas |
 
-## Fase 4 — Acceso de niños (bloqueada por tema legal)
-
-| # | Feature | Prioridad | Estado | Notas |
-|---|---------|-----------|--------|-------|
-| 19 | `privacidad-rgpd` | P0 | [ ] | **Antes de nada:** confirmar autorización con colegio, quién ve qué, conservación y borrado |
-| 20 | `acceso-ninos-invitacion` | P0 | [ ] | Cuentas creadas por coordinador, código/enlace, datos mínimos (alias + grupo) |
-| 21 | `vista-nino` | P1 | [ ] | Calendario de su grupo e inscribirse |
-| 22 | `informes-asistencia` | P2 | [ ] | Informes exportables |
-
 ## Transversal (se va haciendo en cada feature)
 
 - [ ] Logging y gestión de errores homogénea
 - [ ] Documentación OpenAPI revisada
 - [ ] ADRs en `docs/adr/` para decisiones clave (stack, auth, despliegue)
 - [ ] Issues y tablero en GitHub enlazados a este backlog
+- [ ] Privacidad: los nombres de los niños son datos de menores. Datos mínimos (nombre), visibles solo para sus monitores y el admin; borrado al acabar el curso; confirmar con el colegio
 
 ## Pendientes / decisiones abiertas
 
 - Nombre final del proyecto
-- Validación legal antes de la Fase 4
+- Validar con el colegio el tratamiento de los nombres de los niños (antes de la 10)

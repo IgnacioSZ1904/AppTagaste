@@ -101,7 +101,9 @@ npm install        # Solo la primera vez o al cambiar dependencias
 npm run dev        # http://localhost:5173
 ```
 
-En desarrollo, Vite redirige `/api` a `http://localhost:8000`, así que no hace falta configurar nada. Para usar otra API, copia `frontend/.env.example` a `frontend/.env` y cambia `VITE_API_URL`.
+Antes de la primera vez, copia `frontend/.env.example` a `frontend/.env` y pon en `VITE_GOOGLE_CLIENT_ID` el mismo Client ID de Google que `GOOGLE_CLIENT_ID` en el `.env` de la raíz (ver "Autenticación con Google"). En desarrollo, Vite redirige `/api` a `http://localhost:8000`; `VITE_API_URL` solo se cambia para usar otra API.
+
+Abre http://localhost:5173 y entra con una cuenta de Google dada de alta (p. ej. la del coordinador creado con `create-coordinator`). Los coordinadores crean, editan y borran eventos; los monitores solo los ven. La página **Estado** comprueba la conexión con la API.
 
 ```bash
 npm run lint       # oxlint + comprobación de formato
@@ -129,7 +131,9 @@ backend/
 frontend/
 └── src/
     ├── api/           # Cliente de la API y hooks de TanStack Query
-    ├── components/    # Componentes reutilizables (Layout)
+    ├── auth/          # Sesión (token, AuthProvider, rutas protegidas)
+    ├── components/    # Componentes reutilizables (Layout, modales, formularios)
+    ├── lib/           # Utilidades (fechas)
     ├── pages/         # Páginas y sus tests
     ├── test/          # Configuración y utilidades de tests
     └── router.tsx     # Rutas de la app
