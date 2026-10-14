@@ -1,3 +1,5 @@
+import { getToken, notifyUnauthorized } from '@/auth/token'
+
 const API_URL = import.meta.env.VITE_API_URL ?? '/api/v1'
 
 export class ApiError extends Error {
@@ -10,31 +12,51 @@ export class ApiError extends Error {
   }
 }
 
-/** Llama a la API y devuelve el JSON. Lanza ApiError si la respuesta no es 2xx. */
+type ApiInit = Omit<RequestInit, 'body'> & { json?: unknown }
+
+/**
+ * Llama a la API y devuelve el JSON (o undefined si no hay cuerpo).
+ * Añade el token de sesión y lanza ApiError si la respuesta no es 2xx.
+ */
 export async function apiFetch<T>(
   path: string,
-  init?: RequestInit,
+  { json, headers, ...init }: ApiInit = {},
 ): Promise<T> {
+  const token = getToken()
   let response: Response
   try {
     response = await fetch(`${API_URL}${path}`, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...headers,
+      },
+      body: json === undefined ? undefined : JSON.stringify(json),
     })
   } catch {
     throw new ApiError(0, 'No se puede conectar con la API')
   }
 
-  const body: unknown = await response.json().catch(() => null)
-  if (!response.ok) {
-    const detail =
-      body &&
-      typeof body === 'object' &&
-      'detail' in body &&
-      typeof body.detail === 'string'
-        ? body.detail
-        : `Error ${response.status}`
-    throw new ApiError(response.status, detail)
-  }
+  if (response.status === 401 && token) notifyUnauthorized()
+
+  const body: unknown =
+    response.status === 204
+      ? undefined
+      : await response.json().catch(() => null)
+  if (!response.ok)
+    throw new ApiError(response.status, errorMessage(body, response.status))
   return body as T
+}
+
+function errorMessage(body: unknown, status: number): string {
+  if (body && typeof body === 'object' && 'detail' in body) {
+    const { detail } = body
+    if (typeof detail === 'string') return detail
+    // Errores de validación de FastAPI: [{ msg: "..." }, ...]
+    if (Array.isArray(detail) && typeof detail[0]?.msg === 'string') {
+      return detail[0].msg.replace(/^Value error, /, '')
+    }
+  }
+  return `Error ${status}`
 }

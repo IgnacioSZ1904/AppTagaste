@@ -1,1 +1,75 @@
 @import 'tailwindcss';
+@import '@fullcalendar/react/skeleton.css';
+@import '@fullcalendar/react/themes/classic/theme.css';
+@import '@fullcalendar/react/themes/classic/palette.css';
+
+/* Paleta del escudo: rojo y blanco */
+@theme {
+  --color-brand-50: #fef3f2;
+  --color-brand-100: #fde4e1;
+  --color-brand-500: #e62b18;
+  --color-brand-600: #c92212;
+  --color-brand-700: #a01913;
+  --color-brand-800: #7f1610;
+
+  /* Un color por tipo de evento */
+  --color-event-reunion: #e62b18;
+  --color-event-convivencia: #d97706;
+  --color-event-eucaristia: #7f1610;
+  --color-event-otro: #64748b;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand-500 hover:bg-brand-600 rounded-lg px-4 py-2 font-medium text-white disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply border-brand-500 text-brand-700 hover:bg-brand-50 rounded-lg border bg-white px-4 py-2 font-medium disabled:opacity-50;
+  }
+  .field {
+    @apply focus:border-brand-500 focus:ring-brand-100 w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:outline-none;
+  }
+}
+
+/* FullCalendar con la paleta de la app */
+:root {
+  --fc-classic-button: var(--color-brand-500);
+  --fc-classic-button-border: var(--color-brand-500);
+  --fc-classic-button-strong: var(--color-brand-700);
+  --fc-classic-button-strong-border: var(--color-brand-700);
+  --fc-classic-button-outline: #e62b1866;
+  --fc-classic-primary: var(--color-brand-500);
+  --fc-classic-today: #e62b1814;
+  --fc-classic-now: var(--color-brand-500);
+}
+
+/* Chips de tipo de evento (filtros y detalle) */
+@layer components {
+  .event-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium;
+  }
+  .event-reunion {
+    --event-color: var(--color-event-reunion);
+  }
+  .event-convivencia {
+    --event-color: var(--color-event-convivencia);
+  }
+  .event-eucaristia {
+    --event-color: var(--color-event-eucaristia);
+  }
+  .event-otro {
+    --event-color: var(--color-event-otro);
+  }
+  .event-chip {
+    border-color: var(--event-color, var(--color-slate-300));
+    color: var(--event-color, var(--color-slate-700));
+  }
+  .event-chip[aria-pressed='true'] {
+    background-color: var(--event-color, var(--color-brand-500));
+    border-color: var(--event-color, var(--color-brand-500));
+    color: white;
+  }
+}

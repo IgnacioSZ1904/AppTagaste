@@ -13,6 +13,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fullcalendar/react": "^7.1.2",
+    "@react-oauth/google": "^0.13.5",
     "@tanstack/react-query": "^5.104.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
