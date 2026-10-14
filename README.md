@@ -8,12 +8,13 @@ Plataforma web para organizar los grupos de catequesis y eventos de un colegio: 
 
 - **Backend:** Python 3.12, FastAPI, SQLAlchemy 2, Alembic
 - **Base de datos:** PostgreSQL 16
-- **Frontend:** React (próximamente)
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, React Router, TanStack Query
 - **Infra:** Docker y docker-compose
 
 ## Requisitos
 
 - Docker Desktop (o Docker Engine + Compose)
+- Node.js 24 LTS (para el frontend)
 
 ## Arranque en local
 
@@ -49,6 +50,27 @@ docker compose exec api ruff format .          # Formatea el código
 
 GitHub Actions ejecuta el linter y los tests en cada push a `develop`/`master` y en cada PR.
 
+## Frontend
+
+Con la API levantada (`docker compose up`), en otra terminal:
+
+```bash
+cd frontend
+npm install        # Solo la primera vez o al cambiar dependencias
+npm run dev        # http://localhost:5173
+```
+
+En desarrollo, Vite redirige `/api` a `http://localhost:8000`, así que no hace falta configurar nada. Para usar otra API, copia `frontend/.env.example` a `frontend/.env` y cambia `VITE_API_URL`.
+
+```bash
+npm run lint       # oxlint + comprobación de formato
+npm run format     # Formatea el código con Prettier
+npm test           # Tests con Vitest
+npm run build      # Build de producción en dist/
+```
+
+GitHub Actions ejecuta lint, tests y build del frontend en cada push y PR.
+
 ## Estructura
 
 ```
@@ -63,6 +85,13 @@ backend/
     ├── schemas/       # Esquemas Pydantic (entrada/salida)
     ├── services/      # Lógica de negocio
     └── main.py        # Punto de entrada de FastAPI
+frontend/
+└── src/
+    ├── api/           # Cliente de la API y hooks de TanStack Query
+    ├── components/    # Componentes reutilizables (Layout)
+    ├── pages/         # Páginas y sus tests
+    ├── test/          # Configuración y utilidades de tests
+    └── router.tsx     # Rutas de la app
 docs/
 ├── BACKLOG.md         # Features y orden de desarrollo
 ├── brief.md           # Contexto del proyecto
