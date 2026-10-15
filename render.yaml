@@ -1,0 +1,24 @@
+# Blueprint de Render: API en Docker, plan gratuito.
+# Las variables con "sync: false" se rellenan en la web de Render al crear el Blueprint.
+services:
+  - type: web
+    name: apptagaste-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: master
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/v1/health
+    buildFilter:
+      paths:
+        - backend/**
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false

@@ -125,6 +125,47 @@ npm run build      # Build de producción en dist/
 
 GitHub Actions ejecuta lint, tests y build del frontend en cada push y PR.
 
+## Despliegue (gratuito)
+
+```
+navegador ──> Vercel (frontend) ──/api/*──> Render (API, Docker) ──> Neon (Postgres)
+```
+
+- **API:** Render, plan gratuito, con `render.yaml`. Construye la etapa `prod` del `Dockerfile`, que aplica las migraciones al arrancar. Se duerme tras 15 min sin uso: la primera visita después tarda ~1 min.
+- **BD:** Neon, plan gratuito (no caduca).
+- **Frontend:** Vercel. `frontend/vercel.json` redirige `/api/*` a Render (sin CORS) y el resto de rutas a `index.html`.
+- Se despliega solo al hacer push a `master` (PR de `develop` a `master`).
+
+**1. Neon (BD)**
+1. Crea una cuenta en [neon.tech](https://neon.tech) y un proyecto `apptagaste` (Postgres 16, región Frankfurt).
+2. Copia la *connection string* (`postgresql://…?sslmode=require`). Se pega tal cual: la API la adapta.
+
+**2. Render (API)**
+1. Crea una cuenta en [render.com](https://render.com) con GitHub.
+2. *New → Blueprint*, elige el repo y la rama `master`. Render lee `render.yaml`.
+3. Rellena `DATABASE_URL` (la de Neon) y `GOOGLE_CLIENT_ID`. `SECRET_KEY` la genera Render.
+4. Al terminar, abre `https://<servicio>.onrender.com/api/v1/health` → `{"status":"ok","db":"ok"}`.
+
+**3. Vercel (frontend)**
+1. Si la URL de Render no es `https://apptagaste-api.onrender.com`, cámbiala en `frontend/vercel.json` y haz commit.
+2. Crea una cuenta en [vercel.com](https://vercel.com) con GitHub, *Add New → Project*, elige el repo y pon **Root Directory** = `frontend` (Vite se detecta solo).
+3. Variable de entorno: `VITE_GOOGLE_CLIENT_ID` = tu Client ID. En *Settings → Git*, rama de producción `master`.
+4. Abre `https://<proyecto>.vercel.app/api/v1/health`: debe responder lo mismo que Render.
+
+**4. Google Cloud**
+1. En tu *ID de cliente de OAuth*, añade `https://<proyecto>.vercel.app` a *Orígenes de JavaScript autorizados*.
+2. En *Pantalla de consentimiento*, pulsa *Publicar app* para que pueda entrar cualquier cuenta.
+
+**5. Primer admin** (desde tu PC, contra la BD de Neon):
+
+```powershell
+docker compose run --rm -e DATABASE_URL="<url de Neon>" api python -m app.cli create-admin --email tu@gmail.com --name "Tu Nombre"
+```
+
+Entra en `https://<proyecto>.vercel.app` con Google: en la cabecera debe aparecer *Admin*.
+
+**Rollback:** en Render y Vercel, *Deployments → Redeploy/Promote* el despliegue anterior.
+
 ## Estructura
 
 ```
