@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEV_SECRET_KEY = "dev-insecure-secret-key-change-me-0000000000"
@@ -23,10 +23,22 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 480
     google_client_id: str = ""
 
+    @field_validator("database_url")
+    @classmethod
+    def _use_psycopg_driver(cls, url: str) -> str:
+        """Acepta la URL tal cual la dan Neon o Render (postgres:// o postgresql://)."""
+        for prefix in ("postgres://", "postgresql://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg://" + url.removeprefix(prefix)
+        return url
+
     @model_validator(mode="after")
     def _check_production_secrets(self) -> "Settings":
-        if self.environment == "production" and self.secret_key == DEV_SECRET_KEY:
+        if self.environment == "production" and self.secret_key in ("", DEV_SECRET_KEY):
             raise ValueError("SECRET_KEY debe definirse en producción")
+        if not self.secret_key:
+            # SECRET_KEY= vacía en el .env de desarrollo: se usa la clave de desarrollo
+            self.secret_key = DEV_SECRET_KEY
         return self
 
 
