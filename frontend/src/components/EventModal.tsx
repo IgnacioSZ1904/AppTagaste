@@ -9,6 +9,7 @@ import {
   type EventInput,
 } from '@/api/events'
 import { useAuth } from '@/auth/context'
+import { canEditEvents } from '@/auth/roles'
 import { formatApiDate } from '@/lib/dates'
 
 import { EventForm } from './EventForm'
@@ -24,7 +25,7 @@ type Props =
 
 export function EventModal(props: Props) {
   const { user } = useAuth()
-  const canEdit = user?.role === 'coordinador'
+  const canEdit = canEditEvents(user)
   const [editing, setEditing] = useState(props.mode === 'create')
   const create = useCreateEvent()
   const update = useUpdateEvent()

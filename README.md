@@ -114,6 +114,8 @@ Antes de la primera vez, copia `frontend/.env.example` a `frontend/.env` y pon e
 
 Abre http://localhost:5173 y entra con tu cuenta de Google (p. ej. la del admin creado con `create-admin`). Admin y coordinadores crean, editan y borran eventos; el resto solo los ve. La página **Estado** comprueba la conexión con la API.
 
+**Gestión de usuarios** (solo admin, enlace **Usuarios**): busca por nombre o email, filtra por rol, cambia el rol en el desplegable y activa o desactiva cuentas. Pide confirmación al dar o quitar el rol de admin y al desactivar; tu propia fila no se puede cambiar. Con **+ Añadir usuario** das de alta un email de Google con su rol antes de que entre por primera vez.
+
 ```bash
 npm run lint       # oxlint + comprobación de formato
 npm run format     # Formatea el código con Prettier

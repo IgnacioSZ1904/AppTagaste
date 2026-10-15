@@ -13,6 +13,7 @@ import {
   type EventType,
 } from '@/api/events'
 import { useAuth } from '@/auth/context'
+import { canEditEvents } from '@/auth/roles'
 import { EventModal } from '@/components/EventModal'
 import { UpcomingList } from '@/components/UpcomingList'
 import { apiToInput, toApiDate } from '@/lib/dates'
@@ -122,7 +123,7 @@ export function CalendarPage() {
               </button>
             ))}
           </div>
-          {user?.role === 'coordinador' && (
+          {canEditEvents(user) && (
             <button
               type="button"
               className="btn-primary"

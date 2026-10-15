@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router'
 
 import { useAuth } from '@/auth/context'
+import { canManageUsers, ROLE_LABELS } from '@/auth/roles'
 
 const links = [
-  { to: '/', label: 'Calendario' },
-  { to: '/estado', label: 'Estado' },
+  { to: '/', label: 'Calendario', show: () => true },
+  { to: '/usuarios', label: 'Usuarios', show: canManageUsers },
+  { to: '/estado', label: 'Estado', show: () => true },
 ]
-
-const ROLE_LABELS = { coordinador: 'Coordinador', monitor: 'Monitor' } as const
 
 export function Layout() {
   const { user, logout } = useAuth()
@@ -46,22 +46,24 @@ export function Layout() {
             className={`${open ? 'flex' : 'hidden'} w-full flex-col gap-3 pb-2 md:flex md:w-auto md:flex-row md:items-center md:gap-6 md:pb-0`}
           >
             <ul className="flex flex-col gap-2 md:flex-row md:gap-4">
-              {links.map((link) => (
-                <li key={link.to}>
-                  <NavLink
-                    to={link.to}
-                    end
-                    onClick={() => setOpen(false)}
-                    className={({ isActive }) =>
-                      isActive
-                        ? 'text-brand-700 font-semibold underline decoration-2 underline-offset-4'
-                        : 'hover:text-brand-700 text-slate-700'
-                    }
-                  >
-                    {link.label}
-                  </NavLink>
-                </li>
-              ))}
+              {links
+                .filter((link) => link.show(user))
+                .map((link) => (
+                  <li key={link.to}>
+                    <NavLink
+                      to={link.to}
+                      end
+                      onClick={() => setOpen(false)}
+                      className={({ isActive }) =>
+                        isActive
+                          ? 'text-brand-700 font-semibold underline decoration-2 underline-offset-4'
+                          : 'hover:text-brand-700 text-slate-700'
+                      }
+                    >
+                      {link.label}
+                    </NavLink>
+                  </li>
+                ))}
             </ul>
             {user && (
               <div className="flex items-center gap-3 border-t border-slate-200 pt-2 md:border-0 md:pt-0">
