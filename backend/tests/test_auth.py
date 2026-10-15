@@ -39,9 +39,46 @@ def test_login_invalid_google_token(client: TestClient, monkeypatch: pytest.Monk
     assert client.post(LOGIN_URL, json={"credential": "x"}).status_code == 401
 
 
-def test_login_email_not_registered(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    _google_returns(monkeypatch, "desconocido@ejemplo.com")
-    assert client.post(LOGIN_URL, json={"credential": "x"}).status_code == 403
+def test_unknown_email_is_registered_as_usuario(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _google_returns(monkeypatch, "nuevo@ejemplo.com")
+
+    response = client.post(LOGIN_URL, json={"credential": "x"})
+
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+    me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}).json()
+    assert me["email"] == "nuevo@ejemplo.com"
+    assert me["full_name"] == "Nombre"
+    assert me["role"] == "usuario"
+
+
+def test_second_login_reuses_auto_registered_account(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _google_returns(monkeypatch, "nuevo@ejemplo.com")
+    first = client.post(LOGIN_URL, json={"credential": "x"}).json()["access_token"]
+    second = client.post(LOGIN_URL, json={"credential": "x"}).json()["access_token"]
+
+    def user_id(token: str) -> int:
+        return client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}).json()[
+            "id"
+        ]
+
+    assert user_id(first) == user_id(second)
+
+
+def test_auto_registered_name_falls_back_to_email(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    identity = GoogleIdentity(sub="google-2", email="sin.nombre@ejemplo.com", name="")
+    monkeypatch.setattr(auth, "verify_google_token", lambda token: identity)
+
+    token = client.post(LOGIN_URL, json={"credential": "x"}).json()["access_token"]
+
+    me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}).json()
+    assert me["full_name"] == "sin.nombre"
 
 
 def test_login_inactive_user(

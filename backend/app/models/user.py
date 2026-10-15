@@ -8,8 +8,10 @@ from app.db.base import Base
 
 
 class Role(StrEnum):
-    COORDINADOR = "coordinador"
+    ADMIN = "admin"  # todo + gestión de usuarios
+    COORDINADOR = "coordinador"  # CRUD de eventos
     MONITOR = "monitor"
+    USUARIO = "usuario"  # solo ver el calendario; alta automática con Google
 
 
 class User(Base):

@@ -19,10 +19,10 @@ def login_google(body: GoogleLogin, db: DbSession) -> Token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de Google no válido"
         ) from None
-    except users_service.UserNotAllowedError:
+    except users_service.UserInactiveError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tu cuenta no está dada de alta. Pide acceso a un coordinador.",
+            detail="Tu cuenta está desactivada. Pide acceso a un administrador.",
         ) from None
     return Token(access_token=create_access_token(user.id))
 

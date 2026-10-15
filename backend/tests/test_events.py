@@ -21,7 +21,7 @@ NEW_EVENT = {
 
 
 def test_coordinator_creates_event(client: TestClient, make_user: Callable[..., User]) -> None:
-    coordinator = make_user()
+    coordinator = make_user(role=Role.COORDINADOR)
 
     response = client.post(EVENTS_URL, json=NEW_EVENT, headers=auth_headers(coordinator))
 
