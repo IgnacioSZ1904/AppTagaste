@@ -40,20 +40,29 @@ Cada modelo nuevo se importa en `backend/app/models/__init__.py` para que `--aut
 
 ## Autenticación con Google
 
-Coordinadores y monitores entran con su cuenta de Google. Solo pueden entrar los emails que un coordinador haya dado de alta.
+Todos entran con su cuenta de Google. Quien entra por primera vez sin estar dado de alta queda como **usuario** (solo ve el calendario); el admin puede cambiarle el rol o desactivarlo.
+
+| Rol | Puede |
+|-----|-------|
+| `admin` | Todo, incluida la gestión de usuarios |
+| `coordinador` | Crear, editar y borrar eventos |
+| `monitor` | Ver el calendario (grupos y pase de lista llegarán en las features 10 y 12) |
+| `usuario` | Ver el calendario |
 
 **1. Crear el OAuth Client ID** (una vez, gratis):
 1. Entra en [Google Cloud Console](https://console.cloud.google.com/) y crea un proyecto (p. ej. `AppTagaste`).
-2. *APIs y servicios → Pantalla de consentimiento de OAuth*: tipo **Externo**, nombre de la app y tu email; añade tu cuenta como usuario de prueba.
+2. *APIs y servicios → Pantalla de consentimiento de OAuth*: tipo **Externo**, nombre de la app y tu email; añade tu cuenta como usuario de prueba. Mientras la app esté en modo *Prueba*, solo pueden entrar las cuentas añadidas como usuarios de prueba; para que entre cualquiera, pulsa *Publicar app* (solo pide email y nombre, no necesita verificación de Google).
 3. *APIs y servicios → Credenciales → Crear credenciales → ID de cliente de OAuth*: tipo **Aplicación web**, origen autorizado `http://localhost:5173`.
 4. Copia el *ID de cliente* (`…apps.googleusercontent.com`) en `GOOGLE_CLIENT_ID` de tu `.env` y recrea la API: `docker compose up -d --force-recreate api`.
 
-**2. Crear el primer coordinador** (con tu email de Google):
+**2. Crear el primer admin** (con tu email de Google):
 
 ```bash
 docker compose exec api alembic upgrade head
-docker compose exec api python -m app.cli create-coordinator --email tu@gmail.com --name "Tu Nombre"
+docker compose exec api python -m app.cli create-admin --email tu@gmail.com --name "Tu Nombre"
 ```
+
+Si esa cuenta ya existe (por ejemplo, entraste antes y quedó como `usuario`), `create-admin` la asciende a admin y la reactiva.
 
 **3. Probar la API sin frontend:** genera un token de desarrollo y pégalo en el botón *Authorize* de http://localhost:8000/docs:
 
@@ -67,7 +76,7 @@ docker compose exec api python -m app.cli dev-token --email tu@gmail.com
 |----------|-------|
 | `POST /api/v1/auth/google` | Público (recibe el token de Google y devuelve el de la API) |
 | `GET /api/v1/auth/me` | Cualquier usuario autenticado |
-| `GET/POST /api/v1/users`, `PATCH /api/v1/users/{id}` | Coordinador |
+| `GET/POST /api/v1/users`, `PATCH /api/v1/users/{id}` | Admin |
 
 ## Eventos
 
@@ -77,7 +86,7 @@ Eventos y reuniones del calendario. Tipos: `reunion`, `convivencia`, `eucaristia
 |----------|-------|
 | `GET /api/v1/events?from=&to=&type=` | Cualquier usuario autenticado (devuelve los que se solapan con el rango, ordenados por inicio) |
 | `GET /api/v1/events/{id}` | Cualquier usuario autenticado |
-| `POST /api/v1/events`, `PATCH /api/v1/events/{id}`, `DELETE /api/v1/events/{id}` | Coordinador |
+| `POST /api/v1/events`, `PATCH /api/v1/events/{id}`, `DELETE /api/v1/events/{id}` | Admin y coordinador |
 
 ## Tests y calidad
 
@@ -103,7 +112,7 @@ npm run dev        # http://localhost:5173
 
 Antes de la primera vez, copia `frontend/.env.example` a `frontend/.env` y pon en `VITE_GOOGLE_CLIENT_ID` el mismo Client ID de Google que `GOOGLE_CLIENT_ID` en el `.env` de la raíz (ver "Autenticación con Google"). En desarrollo, Vite redirige `/api` a `http://localhost:8000`; `VITE_API_URL` solo se cambia para usar otra API.
 
-Abre http://localhost:5173 y entra con una cuenta de Google dada de alta (p. ej. la del coordinador creado con `create-coordinator`). Los coordinadores crean, editan y borran eventos; los monitores solo los ven. La página **Estado** comprueba la conexión con la API.
+Abre http://localhost:5173 y entra con tu cuenta de Google (p. ej. la del admin creado con `create-admin`). Admin y coordinadores crean, editan y borran eventos; el resto solo los ve. La página **Estado** comprueba la conexión con la API.
 
 ```bash
 npm run lint       # oxlint + comprobación de formato

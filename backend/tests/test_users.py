@@ -17,11 +17,9 @@ def test_anonymous_cannot_manage_users(client: TestClient) -> None:
     assert client.get(USERS_URL).status_code == 401
 
 
-def test_coordinator_creates_and_lists_users(
-    client: TestClient, make_user: Callable[..., User]
-) -> None:
-    coordinator = make_user()
-    headers = auth_headers(coordinator)
+def test_admin_creates_and_lists_users(client: TestClient, make_user: Callable[..., User]) -> None:
+    admin = make_user()
+    headers = auth_headers(admin)
 
     response = client.post(
         USERS_URL,
@@ -36,12 +34,12 @@ def test_coordinator_creates_and_lists_users(
 
 
 def test_duplicate_email_is_rejected(client: TestClient, make_user: Callable[..., User]) -> None:
-    coordinator = make_user()
+    admin = make_user()
     make_user(email="luis@ejemplo.com")
     response = client.post(
         USERS_URL,
         json={"email": "LUIS@ejemplo.com", "full_name": "Luis", "role": "monitor"},
-        headers=auth_headers(coordinator),
+        headers=auth_headers(admin),
     )
     assert response.status_code == 409
 
@@ -49,19 +47,19 @@ def test_duplicate_email_is_rejected(client: TestClient, make_user: Callable[...
 def test_invalid_role_is_rejected(client: TestClient, make_user: Callable[..., User]) -> None:
     response = client.post(
         USERS_URL,
-        json={"email": "x@ejemplo.com", "full_name": "X", "role": "admin"},
+        json={"email": "x@ejemplo.com", "full_name": "X", "role": "superadmin"},
         headers=auth_headers(make_user()),
     )
     assert response.status_code == 422
 
 
-def test_coordinator_updates_user(client: TestClient, make_user: Callable[..., User]) -> None:
-    coordinator = make_user()
+def test_admin_updates_user(client: TestClient, make_user: Callable[..., User]) -> None:
+    admin = make_user()
     monitor = make_user(role=Role.MONITOR)
     response = client.patch(
         f"{USERS_URL}/{monitor.id}",
         json={"role": "coordinador", "is_active": False},
-        headers=auth_headers(coordinator),
+        headers=auth_headers(admin),
     )
     assert response.status_code == 200
     assert response.json()["role"] == "coordinador"
@@ -71,11 +69,11 @@ def test_coordinator_updates_user(client: TestClient, make_user: Callable[..., U
 def test_cannot_change_own_role_or_deactivate(
     client: TestClient, make_user: Callable[..., User]
 ) -> None:
-    coordinator = make_user()
+    admin = make_user()
     response = client.patch(
-        f"{USERS_URL}/{coordinator.id}",
+        f"{USERS_URL}/{admin.id}",
         json={"is_active": False},
-        headers=auth_headers(coordinator),
+        headers=auth_headers(admin),
     )
     assert response.status_code == 400
 

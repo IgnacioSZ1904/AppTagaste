@@ -44,3 +44,7 @@ def require_role(*roles: Role) -> Callable[[User], User]:
         return user
 
     return checker
+
+
+Admin = Annotated[User, Depends(require_role(Role.ADMIN))]
+EventEditor = Annotated[User, Depends(require_role(Role.ADMIN, Role.COORDINADOR))]

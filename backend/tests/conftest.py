@@ -78,11 +78,11 @@ def client(db: Session) -> Iterator[TestClient]:
 
 @pytest.fixture
 def make_user(db: Session) -> Callable[..., User]:
-    """Crea usuarios de prueba: make_user(role=Role.MONITOR, email=...)."""
+    """Crea usuarios de prueba (admin por defecto): make_user(role=Role.MONITOR, email=...)."""
     counter = iter(range(1, 10_000))
 
     def _make_user(
-        role: Role = Role.COORDINADOR, email: str | None = None, is_active: bool = True
+        role: Role = Role.ADMIN, email: str | None = None, is_active: bool = True
     ) -> User:
         n = next(counter)
         user = User(
