@@ -1,6 +1,6 @@
 import { apiFetch } from './client'
 
-export type Role = 'coordinador' | 'monitor'
+export type Role = 'admin' | 'coordinador' | 'monitor' | 'usuario'
 
 export type User = {
   id: number

@@ -76,3 +76,19 @@ export function renderRoute(path: string, { token }: { token?: string } = {}) {
     ),
   }
 }
+
+export const admin: User = {
+  ...coordinator,
+  id: 3,
+  email: 'admin@ejemplo.com',
+  full_name: 'Marta Ruiz',
+  role: 'admin',
+}
+
+export const usuario: User = {
+  ...coordinator,
+  id: 4,
+  email: 'pepe@ejemplo.com',
+  full_name: 'Pepe Gómez',
+  role: 'usuario',
+}
