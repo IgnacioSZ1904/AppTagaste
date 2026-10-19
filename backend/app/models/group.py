@@ -41,6 +41,10 @@ class Group(Base):
             return True
         return user.role in GROUP_MEMBER_ROLES and any(m.id == user.id for m in self.members)
 
+    def is_monitored_by(self, user: User) -> bool:
+        """Monitor responsable del grupo: el único que pasa lista."""
+        return user.role == Role.MONITOR and any(m.id == user.id for m in self.members)
+
 
 class Child(Base):
     __tablename__ = "children"
