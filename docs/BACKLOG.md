@@ -35,7 +35,7 @@ Orden: 07 → 19 → 20 → 08 → 09.
 
 | # | Feature | Prioridad | Estado | Notas |
 |---|---------|-----------|--------|-------|
-| 10 | `grupos-gestion` | P0 | [ ] | Modelo Grupo con sus monitores y su lista de niños (solo nombre, sin cuenta). Los monitores gestionan los niños de su grupo; el admin crea grupos y asigna monitores |
+| 10 | `grupos-gestion` | P0 | [x] | Grupos con responsables (monitores o coordinadores, los asigna el admin) y lista de niños (solo nombre). Solo el admin y los responsables del grupo ven y gestionan sus niños |
 | 21 | `grupos-frontend` | P0 | [ ] | Pantallas de grupos: el admin crea grupos y asigna responsables; los responsables ven y gestionan los niños de sus grupos ("Mis grupos") |
 | 12 | `pase-de-lista` | P0 | [ ] | En cada evento, el monitor marca qué niños de su grupo asistieron |
 | 13 | `estadisticas-basicas` | P2 | [ ] | Asistencia por grupo y evento para admin y coordinador; informes exportables |
