@@ -87,6 +87,31 @@ export const useUpcomingEvents = (
     select: (events) => events.slice(0, limit),
   })
 
+export const useEvent = (id: number) =>
+  useQuery({
+    queryKey: ['events', id],
+    queryFn: () => apiFetch<CalendarEvent>(`/events/${id}`),
+  })
+
+/** Eventos del grupo (y generales) para pasar lista: de 4 semanas atrás a 1 semana vista. */
+export const useAttendanceEvents = (groupId: number) =>
+  useQuery({
+    queryKey: ['events', 'attendance', groupId],
+    queryFn: () => {
+      const day = 24 * 60 * 60 * 1000
+      const now = Date.now()
+      const params = filterParams(
+        new URLSearchParams({
+          from: toApiDate(new Date(now - 28 * day)),
+          to: toApiDate(new Date(now + 7 * day)),
+        }),
+        null,
+        groupId,
+      )
+      return apiFetch<CalendarEvent[]>(`/events?${params}`)
+    },
+  })
+
 function useEventMutation<V>(mutationFn: (variables: V) => Promise<unknown>) {
   const queryClient = useQueryClient()
   return useMutation({

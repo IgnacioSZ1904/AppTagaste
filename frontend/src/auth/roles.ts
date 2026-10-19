@@ -21,3 +21,6 @@ export const canSeeGroups = (user: User | null) =>
   user?.role === 'admin' ||
   user?.role === 'coordinador' ||
   user?.role === 'monitor'
+
+/** Pasar lista: solo los monitores (en los grupos de los que son responsables). */
+export const canTakeAttendance = (user: User | null) => user?.role === 'monitor'
