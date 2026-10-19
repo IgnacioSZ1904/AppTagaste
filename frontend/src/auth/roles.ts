@@ -24,3 +24,7 @@ export const canSeeGroups = (user: User | null) =>
 
 /** Pasar lista: solo los monitores (en los grupos de los que son responsables). */
 export const canTakeAttendance = (user: User | null) => user?.role === 'monitor'
+
+/** Estadísticas de asistencia de todos los grupos. */
+export const canSeeStats = (user: User | null) =>
+  user?.role === 'admin' || user?.role === 'coordinador'
