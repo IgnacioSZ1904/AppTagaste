@@ -5,6 +5,7 @@ import { membersLine, useDeleteGroup, useGroup } from '@/api/groups'
 import { useAuth } from '@/auth/context'
 import { canManageUsers } from '@/auth/roles'
 import { AddChildrenForm } from '@/components/AddChildrenForm'
+import { AttendanceEvents } from '@/components/AttendanceEvents'
 import { ChildrenList } from '@/components/ChildrenList'
 import { GroupForm } from '@/components/GroupForm'
 import { MembersEditor } from '@/components/MembersEditor'
@@ -108,6 +109,13 @@ export function GroupPage() {
           </p>
         )}
       </div>
+
+      {canManage && (
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold">Pase de lista</h2>
+          <AttendanceEvents groupId={group.id} />
+        </div>
+      )}
 
       {renaming && (
         <GroupForm group={group} onClose={() => setRenaming(false)} />

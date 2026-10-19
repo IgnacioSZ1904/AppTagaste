@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 
 import {
   EVENT_TYPE_LABELS,
@@ -8,9 +9,9 @@ import {
   type CalendarEvent,
   type EventInput,
 } from '@/api/events'
-import { useGroups } from '@/api/groups'
+import { useGroups, useMyGroups } from '@/api/groups'
 import { useAuth } from '@/auth/context'
-import { canEditEvents } from '@/auth/roles'
+import { canEditEvents, canTakeAttendance } from '@/auth/roles'
 import { formatApiDate } from '@/lib/dates'
 
 import { EventForm } from './EventForm'
@@ -32,6 +33,8 @@ export function EventModal(props: Props) {
   const update = useUpdateEvent()
   const remove = useDeleteEvent()
   const { data: groups } = useGroups(editing)
+  const isMonitor = canTakeAttendance(user)
+  const { data: myGroups } = useMyGroups(isMonitor && props.mode === 'view')
 
   const save = (data: EventInput) => {
     const options = { onSuccess: props.onClose }
@@ -70,6 +73,11 @@ export function EventModal(props: Props) {
 
   if (props.mode !== 'view') return null
   const { event } = props
+  // Grupos del monitor a los que afecta el evento (los suyos o todos si es general)
+  const listGroups = (myGroups ?? []).filter(
+    (g) =>
+      event.groups.length === 0 || event.groups.some((eg) => eg.id === g.id),
+  )
 
   return (
     <Modal title={event.title} onClose={props.onClose}>
@@ -116,6 +124,21 @@ export function EventModal(props: Props) {
         >
           {remove.error.message}
         </p>
+      )}
+      {isMonitor && listGroups.length > 0 && (
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
+          {listGroups.map((g) => (
+            <Link
+              key={g.id}
+              to={`/grupos/${g.id}/eventos/${event.id}/lista`}
+              className="btn-primary"
+            >
+              {listGroups.length === 1
+                ? 'Pasar lista'
+                : `Pasar lista · ${g.name}`}
+            </Link>
+          ))}
+        </div>
       )}
       {canEdit && (
         <div className="mt-6 flex justify-end gap-2">

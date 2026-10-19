@@ -4,6 +4,7 @@ import { RequireAuth } from '@/auth/RequireAuth'
 import { RequireRole } from '@/auth/RequireRole'
 import { canManageUsers, canSeeGroups } from '@/auth/roles'
 import { Layout } from '@/components/Layout'
+import { AttendancePage } from '@/pages/AttendancePage'
 import { GroupPage } from '@/pages/GroupPage'
 import { GroupsPage } from '@/pages/GroupsPage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -36,6 +37,10 @@ export const routes: RouteObject[] = [
             children: [
               { path: 'grupos', element: <GroupsPage /> },
               { path: 'grupos/:id', element: <GroupPage /> },
+              {
+                path: 'grupos/:id/eventos/:eventId/lista',
+                element: <AttendancePage />,
+              },
             ],
           },
           {
