@@ -115,3 +115,28 @@ def test_children_only_for_admin_and_group_members(
     response = client.get(f"/api/v1/groups/{group.id}/children", headers=auth_headers(user))
 
     assert response.status_code == (200 if allowed else 403)
+
+
+@pytest.mark.parametrize("role", list(Role))
+@pytest.mark.parametrize("is_member", [True, False])
+def test_attendance_read_by_responsables_saved_only_by_monitors(
+    client: TestClient,
+    db: Session,
+    make_user: Callable[..., User],
+    make_event: Callable[..., Event],
+    role: Role,
+    is_member: bool,
+) -> None:
+    user = make_user(role=role)
+    group = Group(name="Grupo", members=[user] if is_member else [])
+    db.add(group)
+    db.commit()
+    url = f"/api/v1/groups/{group.id}/events/{make_event().id}/attendance"
+    can_read = role == Role.ADMIN or (is_member and role in {Role.MONITOR, Role.COORDINADOR})
+    can_save = is_member and role == Role.MONITOR
+
+    read = client.get(url, headers=auth_headers(user))
+    save = client.put(url, json={"present_child_ids": []}, headers=auth_headers(user))
+
+    assert read.status_code == (200 if can_read else 403)
+    assert save.status_code == (200 if can_save else 403)
