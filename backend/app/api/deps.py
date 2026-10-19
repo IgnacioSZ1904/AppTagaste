@@ -69,3 +69,13 @@ def get_managed_group(group: GroupById, user: CurrentUser) -> Group:
 
 
 ManagedGroup = Annotated[Group, Depends(get_managed_group)]
+
+
+def get_monitored_group(group: GroupById, user: CurrentUser) -> Group:
+    """El grupo, si el usuario es monitor responsable de él (el único que pasa lista)."""
+    if not group.is_monitored_by(user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permiso denegado")
+    return group
+
+
+MonitoredGroup = Annotated[Group, Depends(get_monitored_group)]
