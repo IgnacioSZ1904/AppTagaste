@@ -29,13 +29,14 @@ Orden: 07 → 19 → 20 → 08 → 09.
 | 19 | `roles-admin-usuario` | P0 | [x] | Roles **admin** (todo + gestión de usuarios), **coordinador** (CRUD de eventos), **monitor** y **usuario** (solo ver el calendario; alta automática al entrar con Google). Migración `0004` (coordinador → admin), `create-admin` (crea o asciende), dependencias `Admin` y `EventEditor` |
 | 20 | `gestion-usuarios-frontend` | P0 | [x] | Pantalla del admin: lista de usuarios, cambiar rol (coordinador/monitor/usuario), activar/desactivar, dar de alta por email. Ajustar el frontend de la 07 a los roles nuevos: botones de edición para admin y coordinador, etiquetas de admin y usuario en la cabecera, tipo `Role` con los 4 valores |
 | 08 | `despliegue-gratuito` | P0 | [x] | Render (API) + Neon (Postgres) + Vercel (front), variables de entorno; publicada en https://app-tagaste.vercel.app/ |
-| 09 | `exportacion-ical` | P1 | [ ] | Feed iCal por grupo para suscribirse desde el móvil |
+| 09 | `exportacion-ical` | P1 | [x] | Feed iCal público en `/api/v1/calendar.ics` (todos los eventos); filtro por grupo cuando exista la 10 |
 
 ## Fase 2 — Grupos y asistencia
 
 | # | Feature | Prioridad | Estado | Notas |
 |---|---------|-----------|--------|-------|
 | 10 | `grupos-gestion` | P0 | [ ] | Modelo Grupo con sus monitores y su lista de niños (solo nombre, sin cuenta). Los monitores gestionan los niños de su grupo; el admin crea grupos y asigna monitores |
+| 21 | `grupos-frontend` | P0 | [ ] | Pantallas de grupos: el admin crea grupos y asigna responsables; los responsables ven y gestionan los niños de sus grupos ("Mis grupos") |
 | 12 | `pase-de-lista` | P0 | [ ] | En cada evento, el monitor marca qué niños de su grupo asistieron |
 | 13 | `estadisticas-basicas` | P2 | [ ] | Asistencia por grupo y evento para admin y coordinador; informes exportables |
 

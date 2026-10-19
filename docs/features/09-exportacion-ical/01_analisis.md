@@ -37,7 +37,7 @@ Que cualquiera con cuenta pueda suscribirse al calendario de AppTagaste desde Go
 - [x] ¿Librería `icalendar` o generar el texto a mano? → **`icalendar`** (estándar, evita errores de formato).
 
 ## 7. Criterios de aceptación
-- [ ] `GET /api/v1/calendar.ics` devuelve un `.ics` válido con los eventos de los últimos 3 meses y futuros, sin autenticación.
-- [ ] Las horas salen bien en el móvil (hora de España).
-- [ ] Suscripción probada en Google Calendar o iPhone con la app desplegada.
-- [ ] Tests y ruff en verde en la CI.
+- [x] `GET /api/v1/calendar.ics` devuelve un `.ics` válido con los eventos de los últimos 3 meses y futuros, sin autenticación.
+- [x] Las horas salen bien en el móvil (hora de España).
+- [x] Suscripción probada en Google Calendar o iPhone con la app desplegada.
+- [x] Tests y ruff en verde en la CI.

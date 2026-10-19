@@ -101,6 +101,22 @@ URL: `https://app-tagaste.vercel.app/api/v1/calendar.ics` (en local, `http://loc
 
 Cualquiera con la URL puede ver títulos, horas y lugares: no pongas datos de los niños en los eventos.
 
+## Grupos
+
+Cada grupo tiene un nombre, sus **responsables** (monitores o coordinadores que asigna el admin) y su lista de niños (solo nombre y apellidos, sin cuenta).
+
+| Endpoint | Quién |
+|----------|-------|
+| `GET /api/v1/groups`, `GET /api/v1/groups/{id}` | Cualquier usuario autenticado (grupos, responsables y número de niños) |
+| `POST /api/v1/groups`, `PATCH /api/v1/groups/{id}`, `DELETE /api/v1/groups/{id}` | Admin. Borrar un grupo borra sus niños |
+| `POST /api/v1/groups/{id}/members` `{user_id}`, `DELETE /api/v1/groups/{id}/members/{user_id}` | Admin. Solo monitores o coordinadores |
+| `GET/POST /api/v1/groups/{id}/children`, `PATCH/DELETE /api/v1/groups/{id}/children/{child_id}` | Admin y responsables de ese grupo |
+| `GET /api/v1/me/groups` | Grupos de los que eres responsable |
+
+Si un responsable deja de ser monitor o coordinador, pierde el acceso a los niños aunque siga asignado.
+
+**Privacidad:** los nombres de los niños son datos de menores. Solo los ven el admin y los responsables de su grupo; borra los grupos al acabar el curso.
+
 ## Tests y calidad
 
 Con los contenedores levantados:
