@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models.event import Event, EventType
+from app.models.group import Group
 from app.models.user import Role, User
 from tests.conftest import auth_headers
 
@@ -169,3 +170,104 @@ def test_list_filters_by_overlapping_range_and_type(
         e["title"] for e in client.get(EVENTS_URL, params=only_meetings, headers=headers).json()
     ]
     assert titles == ["Reunión noviembre"]
+
+
+# Grupos
+
+
+def test_evento_con_grupos(
+    client: TestClient, make_user: Callable[..., User], make_group: Callable[..., Group]
+) -> None:
+    b, a = make_group(name="B"), make_group(name="A")
+
+    response = client.post(
+        EVENTS_URL,
+        json={**NEW_EVENT, "group_ids": [b.id, a.id]},
+        headers=auth_headers(make_user(role=Role.COORDINADOR)),
+    )
+
+    assert response.status_code == 201
+    assert response.json()["groups"] == [{"id": a.id, "name": "A"}, {"id": b.id, "name": "B"}]
+
+
+def test_evento_sin_grupos_es_general(client: TestClient, make_user: Callable[..., User]) -> None:
+    response = client.post(EVENTS_URL, json=NEW_EVENT, headers=auth_headers(make_user()))
+
+    assert response.status_code == 201
+    assert response.json()["groups"] == []
+
+
+def test_grupo_inexistente_al_crear_da_422(
+    client: TestClient, make_user: Callable[..., User]
+) -> None:
+    response = client.post(
+        EVENTS_URL, json={**NEW_EVENT, "group_ids": [999]}, headers=auth_headers(make_user())
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "No existe el grupo: 999"
+
+
+def test_editar_grupos_del_evento(
+    client: TestClient,
+    make_user: Callable[..., User],
+    make_event: Callable[..., Event],
+    make_group: Callable[..., Group],
+) -> None:
+    event, group = make_event(), make_group()
+    url = f"{EVENTS_URL}/{event.id}"
+    headers = auth_headers(make_user())
+
+    assert client.patch(url, json={"group_ids": [group.id]}, headers=headers).json()["groups"] == [
+        {"id": group.id, "name": group.name}
+    ]
+    # Sin group_ids no se tocan los grupos
+    assert len(client.patch(url, json={"title": "Otro"}, headers=headers).json()["groups"]) == 1
+    assert client.patch(url, json={"group_ids": []}, headers=headers).json()["groups"] == []
+    assert client.patch(url, json={"group_ids": None}, headers=headers).status_code == 422
+    assert client.patch(url, json={"group_ids": [999]}, headers=headers).status_code == 422
+
+
+def test_filtra_por_grupo_con_los_generales(
+    client: TestClient,
+    db: Session,
+    make_user: Callable[..., User],
+    make_event: Callable[..., Event],
+    make_group: Callable[..., Group],
+) -> None:
+    a, b = make_group(), make_group()
+    make_event(title="General")
+    make_event(title="De A").groups = [a]
+    make_event(title="De B").groups = [b]
+    make_event(title="De A y B").groups = [a, b]
+    db.commit()
+    headers = auth_headers(make_user(role=Role.USUARIO))
+
+    titles = {
+        e["title"]
+        for e in client.get(EVENTS_URL, params={"group_id": a.id}, headers=headers).json()
+    }
+
+    assert titles == {"General", "De A", "De A y B"}
+    assert len(client.get(EVENTS_URL, headers=headers).json()) == 4
+    assert client.get(EVENTS_URL, params={"group_id": 999}, headers=headers).status_code == 404
+
+
+def test_borrar_grupo_conserva_sus_eventos(
+    client: TestClient,
+    db: Session,
+    make_user: Callable[..., User],
+    make_event: Callable[..., Event],
+    make_group: Callable[..., Group],
+) -> None:
+    group = make_group()
+    event = make_event()
+    event.groups = [group]
+    db.commit()
+    headers = auth_headers(make_user())
+
+    assert client.delete(f"/api/v1/groups/{group.id}", headers=headers).status_code == 204
+
+    response = client.get(f"{EVENTS_URL}/{event.id}", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["groups"] == []

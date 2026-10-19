@@ -28,18 +28,40 @@ export type CalendarEvent = {
   starts_at: string
   ends_at: string
   location: string | null
+  /** Vacío = evento general (sale en el calendario de todos los grupos). */
+  groups: { id: number; name: string }[]
 }
 
-export type EventInput = Omit<CalendarEvent, 'id'>
+export type EventInput = Omit<CalendarEvent, 'id' | 'groups'> & {
+  group_ids: number[]
+}
 
 export type DateRange = { from: string; to: string }
 
-export const useEvents = (range: DateRange | null, type: EventType | null) =>
+/** Filtros comunes: tipo y grupo (eventos del grupo más los generales). */
+function filterParams(
+  params: URLSearchParams,
+  type: EventType | null,
+  groupId: number | null,
+) {
+  if (type) params.set('type', type)
+  if (groupId !== null) params.set('group_id', String(groupId))
+  return params
+}
+
+export const useEvents = (
+  range: DateRange | null,
+  type: EventType | null,
+  groupId: number | null = null,
+) =>
   useQuery({
-    queryKey: ['events', range, type],
+    queryKey: ['events', range, type, groupId],
     queryFn: () => {
-      const params = new URLSearchParams(range ?? {})
-      if (type) params.set('type', type)
+      const params = filterParams(
+        new URLSearchParams(range ?? {}),
+        type,
+        groupId,
+      )
       return apiFetch<CalendarEvent[]>(`/events?${params}`)
     },
     enabled: range !== null,
@@ -47,12 +69,19 @@ export const useEvents = (range: DateRange | null, type: EventType | null) =>
   })
 
 /** Próximos eventos (los que aún no han terminado), ordenados por inicio. */
-export const useUpcomingEvents = (type: EventType | null, limit = 15) =>
+export const useUpcomingEvents = (
+  type: EventType | null,
+  groupId: number | null = null,
+  limit = 15,
+) =>
   useQuery({
-    queryKey: ['events', 'upcoming', type],
+    queryKey: ['events', 'upcoming', type, groupId],
     queryFn: () => {
-      const params = new URLSearchParams({ from: toApiDate(new Date()) })
-      if (type) params.set('type', type)
+      const params = filterParams(
+        new URLSearchParams({ from: toApiDate(new Date()) }),
+        type,
+        groupId,
+      )
       return apiFetch<CalendarEvent[]>(`/events?${params}`)
     },
     select: (events) => events.slice(0, limit),

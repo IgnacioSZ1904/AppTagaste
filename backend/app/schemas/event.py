@@ -13,6 +13,8 @@ class EventCreate(BaseModel):
     starts_at: LocalDateTime
     ends_at: LocalDateTime
     location: str | None = Field(default=None, max_length=150)
+    # Sin grupos = evento general
+    group_ids: list[int] = []
 
     @model_validator(mode="after")
     def check_range(self) -> Self:
@@ -30,13 +32,21 @@ class EventUpdate(BaseModel):
     starts_at: LocalDateTime | None = None
     ends_at: LocalDateTime | None = None
     location: str | None = Field(default=None, max_length=150)
+    group_ids: list[int] | None = None
 
     @model_validator(mode="after")
     def check_required_not_null(self) -> Self:
-        for field in ("title", "type", "starts_at", "ends_at"):
+        for field in ("title", "type", "starts_at", "ends_at", "group_ids"):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f"El campo {field} no puede ser nulo")
         return self
+
+
+class EventGroupRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
 
 
 class EventRead(BaseModel):
@@ -49,6 +59,7 @@ class EventRead(BaseModel):
     starts_at: LocalDateTime
     ends_at: LocalDateTime
     location: str | None
+    groups: list[EventGroupRead]
     created_by_id: int | None
     created_at: LocalDateTime
     updated_at: LocalDateTime

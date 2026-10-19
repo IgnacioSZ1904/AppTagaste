@@ -7,6 +7,10 @@ import { toApiDate } from '@/lib/dates'
 import {
   coordinator,
   eventsHandler,
+  getHandler,
+  groupA,
+  groupB,
+  usuario,
   meHandler,
   mockApi,
   monitor,
@@ -25,6 +29,7 @@ const reunion: CalendarEvent = {
   starts_at: `${day} 17:00`,
   ends_at: `${day} 18:30`,
   location: 'Sala 2',
+  groups: [],
 }
 
 const eventsRequests = (fetchMock: ReturnType<typeof mockApi>) =>
@@ -40,7 +45,10 @@ describe('CalendarPage', () => {
     const fetchMock = mockApi(meHandler(monitor), eventsHandler([reunion]))
     renderRoute('/', { token: 't' })
 
-    expect(await screen.findByText('Reunión de monitores')).toBeInTheDocument()
+    // La primera carga del calendario (import diferido de FullCalendar) puede tardar
+    expect(
+      await screen.findByText('Reunión de monitores', {}, { timeout: 5000 }),
+    ).toBeInTheDocument()
     const { url } = eventsRequests(fetchMock)[0]
     expect(url.searchParams.get('from')).toMatch(/^\d{4}-\d{2}-\d{2} 00:00$/)
     expect(url.searchParams.get('to')).toMatch(/^\d{4}-\d{2}-\d{2} 00:00$/)
@@ -207,5 +215,147 @@ describe('CalendarPage', () => {
       /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,
     )
     expect(url.searchParams.has('to')).toBe(false)
+  })
+
+  describe('grupos', () => {
+    it('el usuario elige un grupo: filtra, ve sus responsables y se recuerda', async () => {
+      const fetchMock = mockApi(
+        meHandler(usuario),
+        getHandler('/groups', [groupA, groupB]),
+        eventsHandler([]),
+      )
+      renderRoute('/', { token: 't' })
+
+      const select = await screen.findByLabelText('Grupo')
+      expect(select).toHaveValue('')
+      await userEvent.selectOptions(select, String(groupA.id))
+
+      expect(
+        screen.getByText('Monitores: Luis Pérez · Coordinadores: Ana López'),
+      ).toBeInTheDocument()
+      await waitFor(() =>
+        expect(
+          eventsRequests(fetchMock).at(-1)?.url.searchParams.get('group_id'),
+        ).toBe(String(groupA.id)),
+      )
+      expect(localStorage.getItem('apptagaste.group')).toBe(String(groupA.id))
+    })
+
+    it('el monitor empieza con su primer grupo', async () => {
+      const fetchMock = mockApi(
+        meHandler(monitor),
+        getHandler('/groups', [groupA, groupB]),
+        getHandler('/me/groups', [groupA]),
+        eventsHandler([]),
+      )
+      renderRoute('/', { token: 't' })
+
+      await waitFor(() =>
+        expect(screen.getByLabelText('Grupo')).toHaveValue(String(groupA.id)),
+      )
+      await waitFor(() =>
+        expect(
+          eventsRequests(fetchMock).at(-1)?.url.searchParams.get('group_id'),
+        ).toBe(String(groupA.id)),
+      )
+    })
+
+    it('un grupo guardado que ya no existe vuelve a "Todos"', async () => {
+      localStorage.setItem('apptagaste.group', '999')
+      mockApi(
+        meHandler(usuario),
+        getHandler('/groups', [groupA]),
+        eventsHandler([]),
+      )
+      renderRoute('/', { token: 't' })
+
+      await waitFor(() =>
+        expect(screen.getByLabelText('Grupo')).toHaveValue(''),
+      )
+    })
+
+    it('"Suscribirse" da el enlace iCal del grupo elegido', async () => {
+      localStorage.setItem('apptagaste.group', String(groupA.id))
+      mockApi(
+        meHandler(usuario),
+        getHandler('/groups', [groupA]),
+        eventsHandler([]),
+      )
+      renderRoute('/', { token: 't' })
+
+      await screen.findByText(/Monitores: Luis Pérez/)
+      await userEvent.click(screen.getByRole('button', { name: 'Suscribirse' }))
+
+      const dialog = await screen.findByRole('dialog')
+      expect(
+        within(dialog).getByLabelText('Enlace del calendario'),
+      ).toHaveValue(
+        `${window.location.origin}/api/v1/calendar.ics?group_id=${groupA.id}`,
+      )
+      expect(
+        within(dialog).getByRole('link', { name: 'Abrir en el calendario' }),
+      ).toHaveAttribute(
+        'href',
+        expect.stringMatching(/^webcal:\/\/.+calendar\.ics\?group_id=10$/),
+      )
+    })
+
+    it('el detalle dice a qué grupos es el evento', async () => {
+      mockApi(
+        meHandler(usuario),
+        eventsHandler([
+          { ...reunion, groups: [{ id: groupA.id, name: groupA.name }] },
+        ]),
+      )
+      renderRoute('/', { token: 't' })
+
+      await userEvent.click(
+        await screen.findByText('Reunión de monitores', {}, { timeout: 5000 }),
+      )
+      expect(
+        within(await screen.findByRole('dialog')).getByText('Confirmación A'),
+      ).toBeVisible()
+    })
+
+    it('el coordinador crea un evento para el grupo elegido', async () => {
+      localStorage.setItem('apptagaste.group', String(groupA.id))
+      const fetchMock = mockApi(
+        meHandler(coordinator),
+        getHandler('/groups', [groupA, groupB]),
+        eventsHandler([]),
+        (url, init) =>
+          url.pathname === '/api/v1/events' && init.method === 'POST'
+            ? { status: 201, body: { ...reunion, id: 8 } }
+            : undefined,
+      )
+      renderRoute('/', { token: 't' })
+      await screen.findByText(/Monitores: Luis Pérez/)
+      await userEvent.click(
+        screen.getByRole('button', { name: '+ Nuevo evento' }),
+      )
+      const dialog = await screen.findByRole('dialog')
+      // Viene marcado el grupo del calendario; se añade también el B
+      expect(
+        await within(dialog).findByRole('button', { name: groupA.name }),
+      ).toHaveAttribute('aria-pressed', 'true')
+      await userEvent.click(
+        within(dialog).getByRole('button', { name: groupB.name }),
+      )
+      await userEvent.type(within(dialog).getByLabelText('Título'), 'Salida')
+      await userEvent.click(
+        within(dialog).getByRole('button', { name: 'Guardar' }),
+      )
+
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+      )
+      const post = eventsRequests(fetchMock).find(
+        ({ init }) => init?.method === 'POST',
+      )!
+      expect(JSON.parse(String(post.init?.body)).group_ids).toEqual([
+        groupA.id,
+        groupB.id,
+      ])
+    })
   })
 })

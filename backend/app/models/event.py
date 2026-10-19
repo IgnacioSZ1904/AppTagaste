@@ -1,10 +1,21 @@
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    String,
+    Table,
+    Text,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.group import Group
 
 
 class EventType(StrEnum):
@@ -12,6 +23,15 @@ class EventType(StrEnum):
     CONVIVENCIA = "convivencia"
     EUCARISTIA = "eucaristia"
     OTRO = "otro"
+
+
+# Grupos de cada evento; un evento sin grupos es general (sale en el calendario de todos)
+event_groups = Table(
+    "event_groups",
+    Base.metadata,
+    Column("event_id", ForeignKey("events.id", ondelete="CASCADE"), primary_key=True),
+    Column("group_id", ForeignKey("groups.id", ondelete="CASCADE"), primary_key=True, index=True),
+)
 
 
 class Event(Base):
@@ -38,4 +58,8 @@ class Event(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    groups: Mapped[list[Group]] = relationship(
+        secondary=event_groups, order_by=Group.name, lazy="selectin"
     )

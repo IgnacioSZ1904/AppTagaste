@@ -1,6 +1,6 @@
 import { getToken, notifyUnauthorized } from '@/auth/token'
 
-const API_URL = import.meta.env.VITE_API_URL ?? '/api/v1'
+export const API_URL = import.meta.env.VITE_API_URL ?? '/api/v1'
 
 export class ApiError extends Error {
   readonly status: number

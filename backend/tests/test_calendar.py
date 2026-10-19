@@ -7,6 +7,7 @@ from icalendar import Calendar
 from sqlalchemy.orm import Session
 
 from app.models.event import Event, EventType
+from app.models.group import Group
 from app.services.calendar import build_calendar
 
 URL = "/api/v1/calendar.ics"
@@ -77,3 +78,29 @@ def test_horas_en_utc() -> None:
     ics = build_calendar([event]).decode()
     assert "DTSTART:20261024T160000Z" in ics
     assert "DTEND:20261024T180000Z" in ics
+
+
+def test_feed_de_un_grupo_con_los_generales(
+    client: TestClient,
+    db: Session,
+    make_event: Callable[..., Event],
+    make_group: Callable[..., Group],
+) -> None:
+    a, b = make_group(name="Confirmación A"), make_group()
+    soon = datetime.now(UTC) + timedelta(days=5)
+    make_event(starts_at=soon, title="General")
+    make_event(starts_at=soon, title="De A").groups = [a]
+    make_event(starts_at=soon, title="De B").groups = [b]
+    db.commit()
+
+    response = client.get(URL, params={"group_id": a.id})
+
+    assert response.status_code == 200
+    assert set(_events(response.content)) == {"General", "De A"}
+    assert (
+        str(Calendar.from_ical(response.content)["x-wr-calname"]) == "AppTagaste · Confirmación A"
+    )
+
+
+def test_feed_de_grupo_inexistente_da_404(client: TestClient) -> None:
+    assert client.get(URL, params={"group_id": 999}).status_code == 404

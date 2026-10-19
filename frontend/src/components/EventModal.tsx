@@ -8,6 +8,7 @@ import {
   type CalendarEvent,
   type EventInput,
 } from '@/api/events'
+import { useGroups } from '@/api/groups'
 import { useAuth } from '@/auth/context'
 import { canEditEvents } from '@/auth/roles'
 import { formatApiDate } from '@/lib/dates'
@@ -19,7 +20,7 @@ type Props =
   | { mode: 'view'; event: CalendarEvent; onClose: () => void }
   | {
       mode: 'create'
-      defaults: { startsAt: string; endsAt: string }
+      defaults: { startsAt: string; endsAt: string; groupIds: number[] }
       onClose: () => void
     }
 
@@ -30,6 +31,7 @@ export function EventModal(props: Props) {
   const create = useCreateEvent()
   const update = useUpdateEvent()
   const remove = useDeleteEvent()
+  const { data: groups } = useGroups(editing)
 
   const save = (data: EventInput) => {
     const options = { onSuccess: props.onClose }
@@ -54,6 +56,7 @@ export function EventModal(props: Props) {
         <EventForm
           event={props.mode === 'view' ? props.event : undefined}
           defaults={props.mode === 'create' ? props.defaults : undefined}
+          groups={groups}
           submitting={mutation.isPending}
           error={mutation.error?.message ?? null}
           onSubmit={save}
@@ -83,6 +86,14 @@ export function EventModal(props: Props) {
           <dt className="text-sm text-slate-500">Cuándo</dt>
           <dd>
             {formatApiDate(event.starts_at)} – {formatApiDate(event.ends_at)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-sm text-slate-500">Grupos</dt>
+          <dd>
+            {event.groups.length === 0
+              ? 'General (todos los grupos)'
+              : event.groups.map((g) => g.name).join(', ')}
           </dd>
         </div>
         {event.location && (

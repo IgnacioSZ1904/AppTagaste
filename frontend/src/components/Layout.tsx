@@ -2,17 +2,22 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router'
 
 import { useAuth } from '@/auth/context'
-import { canManageUsers, ROLE_LABELS } from '@/auth/roles'
-
-const links = [
-  { to: '/', label: 'Calendario', show: () => true },
-  { to: '/usuarios', label: 'Usuarios', show: canManageUsers },
-  { to: '/estado', label: 'Estado', show: () => true },
-]
+import { canManageUsers, canSeeGroups, ROLE_LABELS } from '@/auth/roles'
 
 export function Layout() {
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
+
+  const links = [
+    { to: '/', label: 'Calendario', show: true },
+    {
+      to: '/grupos',
+      label: canManageUsers(user) ? 'Grupos' : 'Mis grupos',
+      show: canSeeGroups(user),
+    },
+    { to: '/usuarios', label: 'Usuarios', show: canManageUsers(user) },
+    { to: '/estado', label: 'Estado', show: true },
+  ]
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-white text-slate-900">
@@ -47,12 +52,12 @@ export function Layout() {
           >
             <ul className="flex flex-col gap-2 md:flex-row md:gap-4">
               {links
-                .filter((link) => link.show(user))
+                .filter((link) => link.show)
                 .map((link) => (
                   <li key={link.to}>
                     <NavLink
                       to={link.to}
-                      end
+                      end={link.to === '/'}
                       onClick={() => setOpen(false)}
                       className={({ isActive }) =>
                         isActive

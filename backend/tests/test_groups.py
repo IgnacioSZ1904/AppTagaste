@@ -11,23 +11,6 @@ from tests.conftest import auth_headers
 URL = "/api/v1/groups"
 
 
-@pytest.fixture
-def make_group(db: Session) -> Callable[..., Group]:
-    """Crea un grupo con responsables y niños: make_group(members=[u], children=["Ana"])."""
-    counter = iter(range(1, 10_000))
-
-    def _make_group(
-        name: str | None = None, members: list[User] | None = None, children: tuple[str, ...] = ()
-    ) -> Group:
-        group = Group(name=name or f"Grupo {next(counter)}", members=members or [])
-        group.children = [Child(full_name=c) for c in children]
-        db.add(group)
-        db.commit()
-        return group
-
-    return _make_group
-
-
 # Grupos
 
 

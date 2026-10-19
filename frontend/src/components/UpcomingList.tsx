@@ -23,12 +23,13 @@ const MONTHS = [
 
 type Props = {
   type: EventType | null
+  groupId: number | null
   onSelect: (event: CalendarEvent) => void
 }
 
 /** Agenda: los próximos eventos, uno por fila aunque duren varios días. */
-export function UpcomingList({ type, onSelect }: Props) {
-  const { data: events, error, isPending } = useUpcomingEvents(type)
+export function UpcomingList({ type, groupId, onSelect }: Props) {
+  const { data: events, error, isPending } = useUpcomingEvents(type, groupId)
 
   if (isPending) return <p className="text-slate-500">Cargando…</p>
   if (error) {
