@@ -5,6 +5,7 @@ import { vi } from 'vitest'
 
 import type { User } from '@/api/auth'
 import type { CalendarEvent } from '@/api/events'
+import type { Group } from '@/api/groups'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { setToken } from '@/auth/token'
 import { routes } from '@/router'
@@ -92,3 +93,45 @@ export const usuario: User = {
   full_name: 'Pepe Gómez',
   role: 'usuario',
 }
+
+/** Grupo de prueba con Luis (monitor) y Ana (coordinadora) como responsables. */
+export const groupA: Group = {
+  id: 10,
+  name: 'Confirmación A',
+  members: [
+    { id: monitor.id, full_name: monitor.full_name, role: 'monitor' },
+    {
+      id: coordinator.id,
+      full_name: coordinator.full_name,
+      role: 'coordinador',
+    },
+  ],
+  children_count: 2,
+}
+
+export const groupB: Group = {
+  id: 11,
+  name: 'Postcomunión B',
+  members: [],
+  children_count: 0,
+}
+
+/** GET de una ruta exacta con el cuerpo dado. */
+export const getHandler =
+  (path: string, body: unknown): Handler =>
+  (url, init) =>
+    url.pathname === `/api/v1${path}` && (init.method ?? 'GET') === 'GET'
+      ? { body }
+      : undefined
+
+/** Peticiones hechas con un método (para comprobar escrituras). */
+export const requests = (
+  fetchMock: ReturnType<typeof mockApi>,
+  method: string,
+) =>
+  fetchMock.mock.calls
+    .filter(([, init]) => init?.method === method)
+    .map(([url, init]) => ({
+      path: new URL(String(url), 'http://localhost').pathname,
+      body: init?.body ? JSON.parse(String(init.body)) : undefined,
+    }))

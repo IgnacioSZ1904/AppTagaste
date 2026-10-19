@@ -15,6 +15,7 @@ from app.core.security import create_access_token
 from app.db.session import get_db
 from app.main import app
 from app.models.event import Event, EventType
+from app.models.group import Child, Group
 from app.models.user import Role, User
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -117,6 +118,23 @@ def make_event(db: Session) -> Callable[..., Event]:
         return event
 
     return _make_event
+
+
+@pytest.fixture
+def make_group(db: Session) -> Callable[..., Group]:
+    """Crea un grupo con responsables y niños: make_group(members=[u], children=["Ana"])."""
+    counter = iter(range(1, 10_000))
+
+    def _make_group(
+        name: str | None = None, members: list[User] | None = None, children: tuple[str, ...] = ()
+    ) -> Group:
+        group = Group(name=name or f"Grupo {next(counter)}", members=members or [])
+        group.children = [Child(full_name=c) for c in children]
+        db.add(group)
+        db.commit()
+        return group
+
+    return _make_group
 
 
 def auth_headers(user: User) -> dict[str, str]:

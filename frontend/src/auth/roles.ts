@@ -15,3 +15,16 @@ export const canEditEvents = (user: User | null) =>
 
 /** Gestionar usuarios y roles. */
 export const canManageUsers = (user: User | null) => user?.role === 'admin'
+
+/** Ver la sección de grupos: el admin todos, monitores y coordinadores los suyos. */
+export const canSeeGroups = (user: User | null) =>
+  user?.role === 'admin' ||
+  user?.role === 'coordinador' ||
+  user?.role === 'monitor'
+
+/** Pasar lista: solo los monitores (en los grupos de los que son responsables). */
+export const canTakeAttendance = (user: User | null) => user?.role === 'monitor'
+
+/** Estadísticas de asistencia de todos los grupos. */
+export const canSeeStats = (user: User | null) =>
+  user?.role === 'admin' || user?.role === 'coordinador'

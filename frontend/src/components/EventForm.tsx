@@ -7,12 +7,15 @@ import {
   type EventInput,
   type EventType,
 } from '@/api/events'
+import type { Group } from '@/api/groups'
 import { apiToInput, inputToApi } from '@/lib/dates'
 
 type Props = {
   event?: CalendarEvent
-  /** Valores iniciales de inicio y fin para un evento nuevo ("AAAA-MM-DDTHH:MM"). */
-  defaults?: { startsAt: string; endsAt: string }
+  /** Valores iniciales de un evento nuevo (fechas "AAAA-MM-DDTHH:MM" y grupos). */
+  defaults?: { startsAt: string; endsAt: string; groupIds?: number[] }
+  /** Grupos que se pueden elegir. */
+  groups?: Group[]
   submitting: boolean
   error: string | null
   onSubmit: (data: EventInput) => void
@@ -22,6 +25,7 @@ type Props = {
 export function EventForm({
   event,
   defaults,
+  groups = [],
   submitting,
   error,
   onSubmit,
@@ -37,6 +41,14 @@ export function EventForm({
   )
   const [location, setLocation] = useState(event?.location ?? '')
   const [description, setDescription] = useState(event?.description ?? '')
+  const [groupIds, setGroupIds] = useState<number[]>(
+    event ? event.groups.map((g) => g.id) : (defaults?.groupIds ?? []),
+  )
+
+  const toggleGroup = (id: number) =>
+    setGroupIds((ids) =>
+      ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id],
+    )
   const [localError, setLocalError] = useState<string | null>(null)
 
   const handleSubmit = (e: FormEvent) => {
@@ -53,6 +65,7 @@ export function EventForm({
       ends_at: inputToApi(endsAt),
       location: location.trim() || null,
       description: description.trim() || null,
+      group_ids: groupIds,
     })
   }
 
@@ -106,6 +119,29 @@ export function EventForm({
           />
         </label>
       </div>
+      {groups.length > 0 && (
+        <fieldset className="space-y-1">
+          <legend className="text-sm font-medium">Grupos</legend>
+          <div className="flex flex-wrap gap-2">
+            {groups.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                className="event-chip aria-pressed:border-brand-500 aria-pressed:bg-brand-50 aria-pressed:text-brand-700"
+                aria-pressed={groupIds.includes(g.id)}
+                onClick={() => toggleGroup(g.id)}
+              >
+                {g.name}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500">
+            {groupIds.length === 0
+              ? 'Sin grupos: evento general, lo ven todos los grupos.'
+              : 'Solo lo ven los grupos marcados.'}
+          </p>
+        </fieldset>
+      )}
       <label className="block space-y-1">
         <span className="text-sm font-medium">Lugar</span>
         <input

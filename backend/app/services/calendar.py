@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.event import Event, EventType
+from app.services.events import in_group
 
 # El feed incluye los eventos de los últimos 3 meses y todos los futuros
 PAST_DAYS = 90
@@ -19,18 +20,22 @@ TYPE_LABELS = {
 }
 
 
-def feed_events(db: Session, now: datetime | None = None) -> list[Event]:
+def feed_events(
+    db: Session, now: datetime | None = None, group_id: int | None = None
+) -> list[Event]:
     cutoff = (now or datetime.now(UTC)) - timedelta(days=PAST_DAYS)
     query = select(Event).where(Event.ends_at > cutoff).order_by(Event.starts_at, Event.id)
+    if group_id is not None:
+        query = query.where(in_group(group_id))
     return list(db.scalars(query))
 
 
-def build_calendar(events: Iterable[Event]) -> bytes:
+def build_calendar(events: Iterable[Event], name: str = "AppTagaste") -> bytes:
     cal = Calendar()
     cal.add("prodid", "-//AppTagaste//ES")
     cal.add("version", "2.0")
     cal.add("calscale", "GREGORIAN")
-    cal.add("x-wr-calname", "AppTagaste")
+    cal.add("x-wr-calname", name)
     cal.add("x-wr-timezone", "Europe/Madrid")
     # Sugerencia de refresco (el iPhone la respeta; Google refresca cuando quiere)
     cal.add("refresh-interval", timedelta(hours=1), parameters={"VALUE": "DURATION"})

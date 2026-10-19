@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.deps import CurrentUser, DbSession, EventEditor
 from app.models.event import Event, EventType
+from app.models.group import Group
 from app.schemas.event import EventCreate, EventRead, EventUpdate
 from app.schemas.types import LocalDateTime
 from app.services import events as events_service
@@ -20,6 +21,15 @@ def get_event_or_404(event_id: int, db: DbSession) -> Event:
 
 EventById = Annotated[Event, Depends(get_event_or_404)]
 
+GROUP_NOT_FOUND = HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Grupo no encontrado")
+
+
+def unknown_groups(error: events_service.UnknownGroupError) -> HTTPException:
+    ids = ", ".join(str(i) for i in error.group_ids)
+    return HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"No existe el grupo: {ids}"
+    )
+
 
 @router.get("", response_model=list[EventRead])
 def list_events(
@@ -28,8 +38,12 @@ def list_events(
     from_: Annotated[LocalDateTime | None, Query(alias="from")] = None,
     to: LocalDateTime | None = None,
     type_: Annotated[EventType | None, Query(alias="type")] = None,
+    group_id: int | None = None,
 ) -> list[Event]:
-    return events_service.list_events(db, from_, to, type_)
+    """Con `group_id`, los eventos de ese grupo más los generales."""
+    if group_id is not None and db.get(Group, group_id) is None:
+        raise GROUP_NOT_FOUND
+    return events_service.list_events(db, from_, to, type_, group_id)
 
 
 @router.get("/{event_id}", response_model=EventRead)
@@ -39,7 +53,10 @@ def get_event(event: EventById, _: CurrentUser) -> Event:
 
 @router.post("", response_model=EventRead, status_code=status.HTTP_201_CREATED)
 def create_event(body: EventCreate, db: DbSession, current: EventEditor) -> Event:
-    return events_service.create_event(db, body, current)
+    try:
+        return events_service.create_event(db, body, current)
+    except events_service.UnknownGroupError as e:
+        raise unknown_groups(e) from None
 
 
 @router.patch("/{event_id}", response_model=EventRead)
@@ -51,6 +68,8 @@ def update_event(event: EventById, body: EventUpdate, db: DbSession, _: EventEdi
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="La fecha de fin debe ser posterior a la de inicio",
         ) from None
+    except events_service.UnknownGroupError as e:
+        raise unknown_groups(e) from None
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)

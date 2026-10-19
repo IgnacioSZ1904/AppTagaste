@@ -15,8 +15,11 @@ import {
 import { useAuth } from '@/auth/context'
 import { canEditEvents } from '@/auth/roles'
 import { EventModal } from '@/components/EventModal'
+import { GroupPicker } from '@/components/GroupPicker'
+import { SubscribeModal } from '@/components/SubscribeModal'
 import { UpcomingList } from '@/components/UpcomingList'
 import { apiToInput, toApiDate } from '@/lib/dates'
+import { useCalendarGroup } from '@/lib/useCalendarGroup'
 
 const EVENT_COLORS: Record<EventType, string> = {
   reunion: 'var(--color-event-reunion)',
@@ -45,7 +48,9 @@ const VIEWS: { value: View; label: string }[] = [
 
 type Selected =
   | { mode: 'view'; event: CalendarEvent }
-  | { mode: 'create'; defaults: { startsAt: string; endsAt: string } }
+  | { mode: 'create'; defaults: EventDefaults }
+
+type EventDefaults = { startsAt: string; endsAt: string; groupIds: number[] }
 
 export function CalendarPage() {
   const { user } = useAuth()
@@ -53,11 +58,13 @@ export function CalendarPage() {
   const [type, setType] = useState<EventType | null>(null)
   const [view, setView] = useState<View>(isMobile() ? 'agenda' : 'month')
   const [selected, setSelected] = useState<Selected | null>(null)
+  const [subscribing, setSubscribing] = useState(false)
+  const { groups, groupId, group, select } = useCalendarGroup(user)
   const {
     data: events,
     error,
     isFetching,
-  } = useEvents(view === 'month' ? range : null, type)
+  } = useEvents(view === 'month' ? range : null, type, groupId)
 
   const calendarEvents = useMemo(
     () =>
@@ -79,6 +86,16 @@ export function CalendarPage() {
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-3">
       <h1 className="sr-only">Calendario</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <GroupPicker groups={groups} group={group} onChange={select} />
+        <button
+          type="button"
+          className="btn-secondary ml-auto px-3 py-1 text-sm"
+          onClick={() => setSubscribing(true)}
+        >
+          Suscribirse
+        </button>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div
           role="group"
@@ -128,7 +145,13 @@ export function CalendarPage() {
               type="button"
               className="btn-primary"
               onClick={() =>
-                setSelected({ mode: 'create', defaults: newEventDefaults() })
+                setSelected({
+                  mode: 'create',
+                  defaults: {
+                    ...newEventDefaults(),
+                    groupIds: groupId === null ? [] : [groupId],
+                  },
+                })
               }
             >
               + Nuevo evento
@@ -141,6 +164,7 @@ export function CalendarPage() {
         <div className="min-h-0 flex-1 overflow-y-auto">
           <UpcomingList
             type={type}
+            groupId={groupId}
             onSelect={(event) => setSelected({ mode: 'view', event })}
           />
         </div>
@@ -193,6 +217,9 @@ export function CalendarPage() {
 
       {selected && (
         <EventModal {...selected} onClose={() => setSelected(null)} />
+      )}
+      {subscribing && (
+        <SubscribeModal group={group} onClose={() => setSubscribing(false)} />
       )}
     </section>
   )

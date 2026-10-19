@@ -84,15 +84,17 @@ docker compose exec api python -m app.cli dev-token --email tu@gmail.com
 
 Eventos y reuniones del calendario. Tipos: `reunion`, `convivencia`, `eucaristia`, `otro`. Las fechas van en hora de España y formato de 24 h, `AAAA-MM-DD HH:MM` (p. ej. `2026-11-13 17:00`), tanto al enviarlas como al recibirlas; el fin debe ser posterior al inicio. En la BD se guardan con zona horaria (`TIMESTAMPTZ`), así que el cambio de hora y el iCal salen bien.
 
+Cada evento puede ser de uno o varios grupos (`group_ids` al crear o editar; la respuesta trae `groups: [{id, name}]`). Un evento **sin grupos es general** y sale en el calendario de todos los grupos. Borrar un grupo no borra sus eventos.
+
 | Endpoint | Quién |
 |----------|-------|
-| `GET /api/v1/events?from=&to=&type=` | Cualquier usuario autenticado (devuelve los que se solapan con el rango, ordenados por inicio) |
+| `GET /api/v1/events?from=&to=&type=&group_id=` | Cualquier usuario autenticado (devuelve los que se solapan con el rango, ordenados por inicio; con `group_id`, los de ese grupo más los generales) |
 | `GET /api/v1/events/{id}` | Cualquier usuario autenticado |
 | `POST /api/v1/events`, `PATCH /api/v1/events/{id}`, `DELETE /api/v1/events/{id}` | Admin y coordinador |
 
 ## Suscribirse al calendario
 
-`GET /api/v1/calendar.ics` devuelve un calendario público (sin login) con los eventos de los últimos 3 meses y todos los futuros. Las horas van en UTC y cada móvil las muestra en su hora local.
+`GET /api/v1/calendar.ics` devuelve un calendario público (sin login) con los eventos de los últimos 3 meses y todos los futuros. Con `?group_id=N` solo trae los de ese grupo y los generales (404 si el grupo no existe). Las horas van en UTC y cada móvil las muestra en su hora local.
 
 URL: `https://app-tagaste.vercel.app/api/v1/calendar.ics` (en local, `http://localhost:8000/api/v1/calendar.ics`).
 
@@ -100,6 +102,45 @@ URL: `https://app-tagaste.vercel.app/api/v1/calendar.ics` (en local, `http://loc
 - **iPhone:** *Ajustes → Calendario → Cuentas → Añadir cuenta → Otra → Añadir calendario suscrito*, pega la URL. Se refresca cada hora.
 
 Cualquiera con la URL puede ver títulos, horas y lugares: no pongas datos de los niños en los eventos.
+
+## Grupos
+
+Cada grupo tiene un nombre, sus **responsables** (monitores o coordinadores que asigna el admin) y su lista de niños (solo nombre y apellidos, sin cuenta).
+
+| Endpoint | Quién |
+|----------|-------|
+| `GET /api/v1/groups`, `GET /api/v1/groups/{id}` | Cualquier usuario autenticado (grupos, responsables y número de niños) |
+| `POST /api/v1/groups`, `PATCH /api/v1/groups/{id}`, `DELETE /api/v1/groups/{id}` | Admin. Borrar un grupo borra sus niños |
+| `POST /api/v1/groups/{id}/members` `{user_id}`, `DELETE /api/v1/groups/{id}/members/{user_id}` | Admin. Solo monitores o coordinadores |
+| `GET/POST /api/v1/groups/{id}/children`, `PATCH/DELETE /api/v1/groups/{id}/children/{child_id}` | Admin y responsables de ese grupo |
+| `GET /api/v1/me/groups` | Grupos de los que eres responsable |
+
+Si un responsable deja de ser monitor o coordinador, pierde el acceso a los niños aunque siga asignado.
+
+**Privacidad:** los nombres de los niños son datos de menores. Solo los ven el admin y los responsables de su grupo; borra los grupos al acabar el curso.
+
+## Pase de lista
+
+En cada evento del grupo (o general), el monitor marca qué niños asistieron. En la web: botón **Pasar lista** al abrir un evento en el calendario, o sección **Pase de lista** en la ficha del grupo (eventos de las últimas 4 semanas y de la próxima, con su estado).
+
+| Endpoint | Quién |
+|----------|-------|
+| `GET /api/v1/groups/{id}/events/{event_id}/attendance` | Admin y responsables del grupo (solo lectura) |
+| `PUT /api/v1/groups/{id}/events/{event_id}/attendance` `{present_child_ids}` | Solo monitores responsables del grupo |
+
+El `PUT` guarda la lista entera: los niños que no están en `present_child_ids` quedan ausentes. Un niño sin marcar sale con `present: null` (aún no se ha pasado lista). Borrar un evento o un niño borra su asistencia.
+
+## Estadísticas
+
+Asistencia por grupo, por evento y por niño, a partir de los pases de lista. Solo para **admin y coordinadores** (de todos los grupos). En la web: página **Estadísticas** (tabla de grupos) y sección **Estadísticas** en la ficha de cada grupo, con botón **Descargar CSV**.
+
+| Endpoint | Respuesta |
+|----------|-----------|
+| `GET /api/v1/stats/groups` | % de asistencia de cada grupo y listas pasadas |
+| `GET /api/v1/groups/{id}/stats` | Por evento (presentes / faltas, lista pasada o no) y por niño (asistencias, faltas, %) |
+| `GET /api/v1/groups/{id}/stats.csv` | Lo mismo en CSV para Excel (`;` y UTF-8 con BOM): una fila por niño, una columna por evento |
+
+Todos aceptan `?from=AAAA-MM-DD&to=AAAA-MM-DD` (incluidos); por defecto, del 1 de septiembre del curso actual a hoy. Entran los eventos del grupo y los generales. Los eventos sin lista pasada no cuentan en el %.
 
 ## Tests y calidad
 
@@ -126,6 +167,10 @@ npm run dev        # http://localhost:5173
 Antes de la primera vez, copia `frontend/.env.example` a `frontend/.env` y pon en `VITE_GOOGLE_CLIENT_ID` el mismo Client ID de Google que `GOOGLE_CLIENT_ID` en el `.env` de la raíz (ver "Autenticación con Google"). En desarrollo, Vite redirige `/api` a `http://localhost:8000`; `VITE_API_URL` solo se cambia para usar otra API.
 
 Abre http://localhost:5173 y entra con tu cuenta de Google (p. ej. la del admin creado con `create-admin`). Admin y coordinadores crean, editan y borran eventos; el resto solo los ve. La página **Estado** comprueba la conexión con la API.
+
+**Grupos en el calendario:** cualquiera elige un grupo arriba del calendario y ve sus eventos (y los generales) con los nombres de sus monitores y coordinadores; la elección se recuerda en el navegador. **Suscribirse** da el enlace iCal del grupo elegido para añadirlo al móvil. Al crear un evento, admin y coordinadores marcan sus grupos (ninguno = general).
+
+**Grupos** (admin) y **Mis grupos** (monitores y coordinadores): el admin crea, renombra y borra grupos y asigna sus responsables; cada responsable ve los niños de sus grupos y los añade pegando una lista (un nombre por línea), los renombra o los borra.
 
 **Gestión de usuarios** (solo admin, enlace **Usuarios**): busca por nombre o email, filtra por rol, cambia el rol en el desplegable y activa o desactiva cuentas. Pide confirmación al dar o quitar el rol de admin y al desactivar; tu propia fila no se puede cambiar. Con **+ Añadir usuario** das de alta un email de Google con su rol antes de que entre por primera vez.
 
