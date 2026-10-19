@@ -130,6 +130,18 @@ En cada evento del grupo (o general), el monitor marca qué niños asistieron. E
 
 El `PUT` guarda la lista entera: los niños que no están en `present_child_ids` quedan ausentes. Un niño sin marcar sale con `present: null` (aún no se ha pasado lista). Borrar un evento o un niño borra su asistencia.
 
+## Estadísticas
+
+Asistencia por grupo, por evento y por niño, a partir de los pases de lista. Solo para **admin y coordinadores** (de todos los grupos). En la web: página **Estadísticas** (tabla de grupos) y sección **Estadísticas** en la ficha de cada grupo, con botón **Descargar CSV**.
+
+| Endpoint | Respuesta |
+|----------|-----------|
+| `GET /api/v1/stats/groups` | % de asistencia de cada grupo y listas pasadas |
+| `GET /api/v1/groups/{id}/stats` | Por evento (presentes / faltas, lista pasada o no) y por niño (asistencias, faltas, %) |
+| `GET /api/v1/groups/{id}/stats.csv` | Lo mismo en CSV para Excel (`;` y UTF-8 con BOM): una fila por niño, una columna por evento |
+
+Todos aceptan `?from=AAAA-MM-DD&to=AAAA-MM-DD` (incluidos); por defecto, del 1 de septiembre del curso actual a hoy. Entran los eventos del grupo y los generales. Los eventos sin lista pasada no cuentan en el %.
+
 ## Tests y calidad
 
 Con los contenedores levantados:

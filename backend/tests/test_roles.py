@@ -140,3 +140,23 @@ def test_attendance_read_by_responsables_saved_only_by_monitors(
 
     assert read.status_code == (200 if can_read else 403)
     assert save.status_code == (200 if can_save else 403)
+
+
+@pytest.mark.parametrize("role", list(Role))
+def test_stats_only_for_admin_and_coordinators(
+    client: TestClient, db: Session, make_user: Callable[..., User], role: Role
+) -> None:
+    user = make_user(role=role)
+    # Aunque sea responsable del grupo, un monitor no ve las estadísticas
+    group = Group(name="Grupo", members=[user] if role != Role.USUARIO else [])
+    db.add(group)
+    db.commit()
+    headers = auth_headers(user)
+    allowed = role in {Role.ADMIN, Role.COORDINADOR}
+
+    summary = client.get("/api/v1/stats/groups", headers=headers)
+    detail = client.get(f"/api/v1/groups/{group.id}/stats", headers=headers)
+    export = client.get(f"/api/v1/groups/{group.id}/stats.csv", headers=headers)
+
+    for response in (summary, detail, export):
+        assert response.status_code == (200 if allowed else 403)

@@ -2,13 +2,14 @@ import type { RouteObject } from 'react-router'
 
 import { RequireAuth } from '@/auth/RequireAuth'
 import { RequireRole } from '@/auth/RequireRole'
-import { canManageUsers, canSeeGroups } from '@/auth/roles'
+import { canManageUsers, canSeeGroups, canSeeStats } from '@/auth/roles'
 import { Layout } from '@/components/Layout'
 import { AttendancePage } from '@/pages/AttendancePage'
 import { GroupPage } from '@/pages/GroupPage'
 import { GroupsPage } from '@/pages/GroupsPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { StatsPage } from '@/pages/StatsPage'
 import { StatusPage } from '@/pages/StatusPage'
 import { UsersPage } from '@/pages/UsersPage'
 
@@ -42,6 +43,15 @@ export const routes: RouteObject[] = [
                 element: <AttendancePage />,
               },
             ],
+          },
+          {
+            element: (
+              <RequireRole
+                allow={canSeeStats}
+                message="Las estadísticas son para coordinadores y administradores."
+              />
+            ),
+            children: [{ path: 'estadisticas', element: <StatsPage /> }],
           },
           {
             element: <RequireRole allow={canManageUsers} />,
