@@ -3,11 +3,12 @@ import { Link, useNavigate, useParams } from 'react-router'
 
 import { membersLine, useDeleteGroup, useGroup } from '@/api/groups'
 import { useAuth } from '@/auth/context'
-import { canManageUsers } from '@/auth/roles'
+import { canManageUsers, canSeeStats } from '@/auth/roles'
 import { AddChildrenForm } from '@/components/AddChildrenForm'
 import { AttendanceEvents } from '@/components/AttendanceEvents'
 import { ChildrenList } from '@/components/ChildrenList'
 import { GroupForm } from '@/components/GroupForm'
+import { GroupStatsSection } from '@/components/GroupStatsSection'
 import { MembersEditor } from '@/components/MembersEditor'
 
 export function GroupPage() {
@@ -114,6 +115,13 @@ export function GroupPage() {
         <div className="space-y-2">
           <h2 className="text-lg font-semibold">Pase de lista</h2>
           <AttendanceEvents groupId={group.id} />
+        </div>
+      )}
+
+      {canSeeStats(user) && (
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold">Estadísticas</h2>
+          <GroupStatsSection groupId={group.id} />
         </div>
       )}
 

@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router'
 
 import { useAuth } from '@/auth/context'
-import { canManageUsers, canSeeGroups, ROLE_LABELS } from '@/auth/roles'
+import {
+  canManageUsers,
+  canSeeGroups,
+  canSeeStats,
+  ROLE_LABELS,
+} from '@/auth/roles'
 
 export function Layout() {
   const { user, logout } = useAuth()
@@ -15,6 +20,7 @@ export function Layout() {
       label: canManageUsers(user) ? 'Grupos' : 'Mis grupos',
       show: canSeeGroups(user),
     },
+    { to: '/estadisticas', label: 'Estadísticas', show: canSeeStats(user) },
     { to: '/usuarios', label: 'Usuarios', show: canManageUsers(user) },
     { to: '/estado', label: 'Estado', show: true },
   ]
