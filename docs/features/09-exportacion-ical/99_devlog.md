@@ -6,3 +6,4 @@
 - Tests (`test_calendar.py`): acceso sin login, filtro de 90 días, campos del evento y horas en UTC (18:00 de España en octubre → `160000Z`).
 - Encontrado al probar: iCalendar no guarda microsegundos; el test compara con una hora redondeada.
 - Verificado en la nube: 68 tests en verde y ruff OK.
+- Probado por Ignacio en local (`curl.exe` muestra sus 4 eventos con horas en UTC correctas), PR mergeada y desplegada en `master` (PR #13); suscripción desde el móvil OK.

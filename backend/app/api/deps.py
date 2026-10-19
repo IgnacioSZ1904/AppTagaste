@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
 from app.db.session import get_db
+from app.models.group import Group
 from app.models.user import Role, User
 
 DbSession = Annotated[Session, Depends(get_db)]
@@ -48,3 +49,23 @@ def require_role(*roles: Role) -> Callable[[User], User]:
 
 Admin = Annotated[User, Depends(require_role(Role.ADMIN))]
 EventEditor = Annotated[User, Depends(require_role(Role.ADMIN, Role.COORDINADOR))]
+
+
+def get_group_or_404(group_id: int, db: DbSession) -> Group:
+    group = db.get(Group, group_id)
+    if group is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Grupo no encontrado")
+    return group
+
+
+GroupById = Annotated[Group, Depends(get_group_or_404)]
+
+
+def get_managed_group(group: GroupById, user: CurrentUser) -> Group:
+    """El grupo, si el usuario es admin o responsable de él (sus niños son datos de menores)."""
+    if not group.is_managed_by(user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permiso denegado")
+    return group
+
+
+ManagedGroup = Annotated[Group, Depends(get_managed_group)]
