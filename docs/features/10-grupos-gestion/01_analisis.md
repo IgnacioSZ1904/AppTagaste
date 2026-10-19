@@ -42,10 +42,10 @@ Organizar la catequesis en grupos: cada grupo tiene sus monitores y su lista de 
 - [x] ¿Añado `grupos-frontend` al BACKLOG para el hilo de frontend? → **sí**, como feature 21.
 
 ## 7. Criterios de aceptación
-- [ ] El admin crea, edita y borra grupos y les asigna o quita responsables; el resto recibe 403.
-- [ ] Solo usuarios con rol monitor o coordinador pueden asignarse a un grupo (si no, 422).
-- [ ] Los responsables de un grupo ven y gestionan sus niños; con otro grupo reciben 403.
-- [ ] Usuarios y responsables de otros grupos no ven niños (403).
-- [ ] `GET /me/groups` devuelve los grupos de quien ha iniciado sesión.
-- [ ] Borrar un grupo borra sus niños.
-- [ ] Migración `0005` aplica y revierte sin errores. Tests y ruff en verde en la CI.
+- [x] El admin crea, edita y borra grupos y les asigna o quita responsables; el resto recibe 403.
+- [x] Solo usuarios con rol monitor o coordinador pueden asignarse a un grupo (si no, 422).
+- [x] Los responsables de un grupo ven y gestionan sus niños; con otro grupo reciben 403.
+- [x] Usuarios y responsables de otros grupos no ven niños (403).
+- [x] `GET /me/groups` devuelve los grupos de quien ha iniciado sesión.
+- [x] Borrar un grupo borra sus niños.
+- [x] Migración `0005` aplica y revierte sin errores. Tests y ruff en verde en la CI.

@@ -6,3 +6,4 @@
 - Decisión: `children_count` como `column_property` (subconsulta), para que la lista pública de grupos no cargue los nombres de los niños.
 - Decisión: un responsable que deja de ser monitor o coordinador pierde el acceso aunque siga asignado (se comprueba el rol en cada petición).
 - Verificado en la nube: 99 tests en verde (31 nuevos), ruff OK, `alembic check` limpio, `0005` aplica, revierte y vuelve a aplicar.
+- Probado por Ignacio en local (tests, ruff y prueba desde `/docs`); PR #14 mergeada en `develop`.
