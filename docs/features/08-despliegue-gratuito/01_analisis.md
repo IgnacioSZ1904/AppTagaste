@@ -45,10 +45,10 @@ Publicar AppTagaste en internet gratis: API, base de datos y frontend accesibles
 - [x] ¿Ejecutas tú los pasos en las webs (crear cuentas, conectar el repo, poner variables)? → **sí**; yo preparo los archivos y una guía paso a paso, y tú me pasas las URLs para comprobar.
 
 ## 7. Criterios de aceptación
-- [ ] La app abre en una URL pública de Vercel y muestra el login.
-- [ ] Login con Google funciona en producción; tu cuenta es admin (`/auth/me`).
-- [ ] Un admin crea un evento y se ve en el calendario.
-- [ ] `/api/v1/health` en producción devuelve `db: ok`.
-- [ ] Las migraciones se aplican solas al desplegar.
-- [ ] Ningún secreto en el repo; todos en las variables de entorno de las plataformas.
-- [ ] README con la guía de despliegue.
+- [x] La app abre en una URL pública de Vercel y muestra el login.
+- [x] Login con Google funciona en producción; tu cuenta es admin (`/auth/me`).
+- [x] Un admin crea un evento y se ve en el calendario.
+- [x] `/api/v1/health` en producción devuelve `db: ok`.
+- [x] Las migraciones se aplican solas al desplegar.
+- [x] Ningún secreto en el repo; todos en las variables de entorno de las plataformas.
+- [x] README con la guía de despliegue.

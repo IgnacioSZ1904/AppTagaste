@@ -4,6 +4,8 @@ Plataforma web para organizar los grupos de catequesis y eventos de un colegio: 
 
 > Proyecto en desarrollo. Ver el [backlog](docs/BACKLOG.md) y el [brief](docs/brief.md).
 
+> **Publicada en https://app-tagaste.vercel.app/.** La API está en el plan gratuito de Render, que se duerme tras 15 minutos sin uso: la primera visita después tarda alrededor de un minuto en cargar. Es normal; las siguientes van rápidas.
+
 ## Stack
 
 - **Backend:** Python 3.12, FastAPI, SQLAlchemy 2, Alembic
@@ -87,6 +89,17 @@ Eventos y reuniones del calendario. Tipos: `reunion`, `convivencia`, `eucaristia
 | `GET /api/v1/events?from=&to=&type=` | Cualquier usuario autenticado (devuelve los que se solapan con el rango, ordenados por inicio) |
 | `GET /api/v1/events/{id}` | Cualquier usuario autenticado |
 | `POST /api/v1/events`, `PATCH /api/v1/events/{id}`, `DELETE /api/v1/events/{id}` | Admin y coordinador |
+
+## Suscribirse al calendario
+
+`GET /api/v1/calendar.ics` devuelve un calendario público (sin login) con los eventos de los últimos 3 meses y todos los futuros. Las horas van en UTC y cada móvil las muestra en su hora local.
+
+URL: `https://app-tagaste.vercel.app/api/v1/calendar.ics` (en local, `http://localhost:8000/api/v1/calendar.ics`).
+
+- **Google Calendar** (desde el ordenador): *Otros calendarios → + → Desde URL*, pega la URL. Aparece también en el móvil. Google lo refresca cada 8–24 h, no al momento.
+- **iPhone:** *Ajustes → Calendario → Cuentas → Añadir cuenta → Otra → Añadir calendario suscrito*, pega la URL. Se refresca cada hora.
+
+Cualquiera con la URL puede ver títulos, horas y lugares: no pongas datos de los niños en los eventos.
 
 ## Tests y calidad
 
