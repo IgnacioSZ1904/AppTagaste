@@ -119,6 +119,17 @@ Si un responsable deja de ser monitor o coordinador, pierde el acceso a los niñ
 
 **Privacidad:** los nombres de los niños son datos de menores. Solo los ven el admin y los responsables de su grupo; borra los grupos al acabar el curso.
 
+## Pase de lista
+
+En cada evento del grupo (o general), el monitor marca qué niños asistieron. En la web: botón **Pasar lista** al abrir un evento en el calendario, o sección **Pase de lista** en la ficha del grupo (eventos de las últimas 4 semanas y de la próxima, con su estado).
+
+| Endpoint | Quién |
+|----------|-------|
+| `GET /api/v1/groups/{id}/events/{event_id}/attendance` | Admin y responsables del grupo (solo lectura) |
+| `PUT /api/v1/groups/{id}/events/{event_id}/attendance` `{present_child_ids}` | Solo monitores responsables del grupo |
+
+El `PUT` guarda la lista entera: los niños que no están en `present_child_ids` quedan ausentes. Un niño sin marcar sale con `present: null` (aún no se ha pasado lista). Borrar un evento o un niño borra su asistencia.
+
 ## Tests y calidad
 
 Con los contenedores levantados:

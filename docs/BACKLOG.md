@@ -37,7 +37,7 @@ Orden: 07 → 19 → 20 → 08 → 09.
 |---|---------|-----------|--------|-------|
 | 10 | `grupos-gestion` | P0 | [x] | Grupos con responsables (monitores o coordinadores, los asigna el admin) y lista de niños (solo nombre). Solo el admin y los responsables del grupo ven y gestionan sus niños |
 | 21 | `grupos-frontend` | P0 | [x] | Pantallas de grupos: el admin crea grupos y asigna responsables; los responsables ven y gestionan los niños de sus grupos ("Mis grupos", alta pegando una lista). Incluye backend: eventos de uno o varios grupos (sin grupo = general, migración `0006`), calendario e iCal por grupo con sus responsables y botón "Suscribirse" |
-| 12 | `pase-de-lista` | P0 | [ ] | En cada evento, el monitor marca qué niños de su grupo asistieron |
+| 12 | `pase-de-lista` | P0 | [x] | En cada evento, el monitor marca qué niños de su grupo asistieron (incluye la pantalla) |
 | 13 | `estadisticas-basicas` | P2 | [ ] | Asistencia por grupo y evento para admin y coordinador; informes exportables |
 
 ## Fase 3 — Biblioteca de recursos
