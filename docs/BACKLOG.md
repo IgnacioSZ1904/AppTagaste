@@ -60,9 +60,13 @@ Los documentos se eligen del Drive de cada uno desde la app (selector de Google,
 
 ## Transversal (se va haciendo en cada feature)
 
-- [ ] Logging y gestión de errores homogénea
-- [ ] Documentación OpenAPI revisada
-- [ ] ADRs en `docs/adr/` para decisiones clave (stack, auth, despliegue)
+| # | Feature | Prioridad | Estado | Notas |
+|---|---------|-----------|--------|-------|
+| 23 | `calidad-transversal` | P1 | [x] | Errores homogéneos con `AppError` (422 en español, 500 con `request_id`), log por petición con `X-Request-ID`, OpenAPI revisada, página de error en el frontend y ADRs 0001–0009 |
+
+- [x] Logging y gestión de errores homogénea (23)
+- [x] Documentación OpenAPI revisada (23)
+- [x] ADRs en `docs/adr/` para decisiones clave (23)
 - [ ] Issues y tablero en GitHub enlazados a este backlog
 - [ ] Privacidad: los nombres de los niños son datos de menores. Datos mínimos (nombre), visibles solo para sus monitores y el admin; borrado al acabar el curso; confirmar con el colegio
 

@@ -209,6 +209,26 @@ Mientras la app de Google está en modo **Prueba**, solo entran las cuentas de l
 
 Las páginas `/privacidad` y `/condiciones` son públicas (se ven sin iniciar sesión) y están enlazadas desde el login y el pie de la app. Si cambia el responsable de los datos (por ejemplo, el colegio), hay que actualizar `frontend/src/pages/PrivacyPage.tsx`.
 
+## Errores y logs
+
+**Errores de la API.** Todas las respuestas de error tienen la forma `{"detail": "mensaje en español"}`. Los datos mal enviados devuelven 422 con un mensaje legible (`title: es obligatorio`). Un fallo no controlado devuelve 500 con `{"detail": "Error interno del servidor", "request_id": "…"}` y el detalle técnico solo queda en los logs. En el código, los servicios lanzan subclases de `AppError` (`app/core/errors.py`) y un manejador global las convierte en la respuesta HTTP.
+
+**Logs.** Una línea por petición, en texto:
+
+```
+2026-10-20 18:03:11,402 INFO [3f9a1c2b7d4e] app.requests: GET /api/v1/events 200 12 ms usuario=4
+```
+
+- El identificador entre corchetes es el `X-Request-ID`: viene en la cabecera de cada respuesta y, si el cliente envía uno, se respeta. Todas las líneas de esa petición lo llevan.
+- Cuando algo falla, la web muestra el error con `(ref. 3f9a1c2b7d4e)`: busca esa referencia en los logs de Render (*Logs* → buscar).
+- `/health` no se registra en nivel `INFO`. El nivel se cambia con la variable `LOG_LEVEL` (`DEBUG`, `INFO`, `WARNING`).
+
+**Documentación de la API.** Swagger con descripción, grupos y errores de cada ruta: [local](http://localhost:8000/docs) y [producción](https://apptagaste-api.onrender.com/docs).
+
+## Decisiones de arquitectura
+
+Las decisiones importantes (stack, autenticación, despliegue, biblioteca…) están explicadas en [docs/adr](docs/adr/README.md), con sus alternativas y consecuencias.
+
 ## Tests y calidad
 
 Con los contenedores levantados:
@@ -299,7 +319,7 @@ backend/
 ├── tests/             # Tests con pytest
 └── app/
     ├── api/v1/        # Routers y endpoints HTTP
-    ├── core/          # Configuración (pydantic-settings)
+    ├── core/          # Configuración, errores, logging y OpenAPI
     ├── db/            # Sesión y conexión a la BD
     ├── models/        # Modelos SQLAlchemy
     ├── schemas/       # Esquemas Pydantic (entrada/salida)
@@ -315,6 +335,7 @@ frontend/
     ├── test/          # Configuración y utilidades de tests
     └── router.tsx     # Rutas de la app
 docs/
+├── adr/               # Decisiones de arquitectura (ADR)
 ├── BACKLOG.md         # Features y orden de desarrollo
 ├── brief.md           # Contexto del proyecto
 └── features/          # Análisis, plan y tareas de cada feature
