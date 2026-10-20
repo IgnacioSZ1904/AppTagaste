@@ -57,7 +57,11 @@ export const routes: RouteObject[] = [
                 message="La biblioteca es para monitores, coordinadores y administradores."
               />
             ),
-            children: [{ path: 'biblioteca', element: <LibraryPage /> }],
+            children: [
+              { path: 'biblioteca', element: <LibraryPage /> },
+              { path: 'biblioteca/:curso', element: <LibraryPage /> },
+              { path: 'biblioteca/:curso/:grupo', element: <LibraryPage /> },
+            ],
           },
           {
             element: (
