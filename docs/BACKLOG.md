@@ -42,7 +42,7 @@ Orden: 07 → 19 → 20 → 08 → 09.
 
 ## Fase 3 — Biblioteca de recursos
 
-Los documentos se eligen del Drive de cada uno desde la app (selector de Google, permiso `drive.file`). Cada documento lleva **curso escolar** (p. ej. 2025-2026) y **grupo**, que se guardan como texto para que sigan disponibles aunque el grupo se borre al acabar el curso. Lo ven y abren admin, coordinadores y monitores.
+Los documentos se eligen del Drive de cada uno desde la app (selector de Google, permiso `drive.file`). Cada documento lleva **curso escolar** (p. ej. 2025-2026) y **grupo**, que se guardan como texto para que sigan disponibles aunque el grupo se borre al acabar el curso. Lo ven y abren admin, coordinadores y monitores. Quien lo subió, los coordinadores y el admin pueden editar sus datos o eliminarlo (arreglo de 2026-10-20).
 
 | # | Feature | Prioridad | Estado | Notas |
 |---|---------|-----------|--------|-------|
@@ -50,7 +50,7 @@ Los documentos se eligen del Drive de cada uno desde la app (selector de Google,
 | 15 | `selector-drive` | P0 | [x] | Botón "Añadir desde Drive" con el selector de Google; al añadir se piden curso, grupo y etiquetas, y el navegador descarga el fichero de Drive (Google Docs como .docx, PDF, Word) y lo sube; página mínima `/biblioteca` |
 | 16 | `buscador-texto-completo` | P0 | [x] | Extracción del texto (Google Docs, PDF, .docx), `tsvector` en español sin tildes, búsqueda de temáticas y dinámicas con fragmento de contexto |
 | 17 | `biblioteca-frontend` | P1 | [x] | Navegar por curso y por grupo, filtro por etiquetas, buscador y abrir o descargar el documento |
-| 18 | `etiquetas-con-llm` | P2 | [ ] | Sugerencia automática de etiquetas |
+| 18 | `etiquetas-con-llm` | P2 | — | Descartada (2026-10-20) |
 
 ## Publicación
 

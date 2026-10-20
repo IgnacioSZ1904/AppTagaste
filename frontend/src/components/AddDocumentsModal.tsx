@@ -153,8 +153,9 @@ export function AddDocumentsModal({
           <span className="text-xs text-slate-500">Separadas por comas.</span>
         </label>
         <p className="text-xs text-slate-500">
-          Los documentos son de solo lectura: súbelos terminados. Se guarda una
-          copia, así que no se pierden aunque los borres de Drive.
+          El fichero no se puede cambiar después: súbelo terminado (curso, grupo
+          y etiquetas sí se pueden editar). Se guarda una copia, así que no se
+          pierde aunque lo borres de Drive.
         </p>
 
         <div className="flex justify-end gap-2">

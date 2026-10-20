@@ -5,7 +5,8 @@ from fastapi import APIRouter, File, Form, HTTPException, Query, Response, Uploa
 
 from app.api.deps import DbSession, Librarian
 from app.models.document import Document
-from app.schemas.document import DocumentRead, LibraryFilters, TagRead
+from app.models.user import User
+from app.schemas.document import DocumentRead, DocumentUpdate, LibraryFilters, TagRead
 from app.services import documents as documents_service
 
 router = APIRouter(tags=["documents"])
@@ -62,13 +63,13 @@ def create_document(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Grupo no encontrado"
         ) from None
-    return documents_service.to_read(document, bool(document.content_text))
+    return documents_service.to_read(document, user, bool(document.content_text))
 
 
 @router.get("/documents", response_model=list[DocumentRead])
 def list_documents(
     db: DbSession,
-    _: Librarian,
+    user: Librarian,
     school_year: str | None = None,
     group: Annotated[str | None, Query(description="Nombre del grupo")] = None,
     tag: Annotated[list[str] | None, Query(description="Varias = los que tienen todas")] = None,
@@ -81,7 +82,10 @@ def list_documents(
     ] = None,
 ) -> list[dict]:
     rows = documents_service.list_documents(db, school_year, group, tag, q)
-    return [documents_service.to_read(*row) for row in rows]
+    return [
+        documents_service.to_read(document, user, found, snippet)
+        for document, found, snippet in rows
+    ]
 
 
 # Antes de /documents/{document_id} para que "filters" no se tome como id
@@ -98,9 +102,50 @@ def get_document_or_404(document_id: int, db: DbSession) -> Document:
 
 
 @router.get("/documents/{document_id}", response_model=DocumentRead)
-def get_document(document_id: int, db: DbSession, _: Librarian) -> dict:
+def get_document(document_id: int, db: DbSession, user: Librarian) -> dict:
     document = get_document_or_404(document_id, db)
-    return documents_service.to_read(document, bool(document.content_text))
+    return documents_service.to_read(document, user, bool(document.content_text))
+
+
+def editable_document_or_403(document_id: int, db: DbSession, user: User) -> Document:
+    document = get_document_or_404(document_id, db)
+    if not documents_service.can_edit(user, document):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo quien lo subió, los coordinadores y el admin pueden cambiarlo",
+        )
+    return document
+
+
+@router.patch("/documents/{document_id}", response_model=DocumentRead)
+def update_document(
+    document_id: int, payload: DocumentUpdate, db: DbSession, user: Librarian
+) -> dict:
+    document = editable_document_or_403(document_id, db, user)
+    try:
+        documents_service.update_document(
+            db,
+            document,
+            title=payload.title,
+            school_year=payload.school_year,
+            group_id=payload.group_id,
+            tag_names=payload.tags,
+        )
+    except documents_service.InvalidSchoolYearError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Curso escolar no válido (formato 2025-2026, no posterior al actual)",
+        ) from None
+    except documents_service.UnknownGroupError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Grupo no encontrado"
+        ) from None
+    return documents_service.to_read(document, user, bool(document.content_text))
+
+
+@router.delete("/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_document(document_id: int, db: DbSession, user: Librarian) -> None:
+    documents_service.delete_document(db, editable_document_or_403(document_id, db, user))
 
 
 @router.get(
