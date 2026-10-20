@@ -63,6 +63,7 @@ Los documentos se eligen del Drive de cada uno desde la app (selector de Google,
 | # | Feature | Prioridad | Estado | Notas |
 |---|---------|-----------|--------|-------|
 | 23 | `calidad-transversal` | P1 | [x] | Errores homogéneos con `AppError` (422 en español, 500 con `request_id`), log por petición con `X-Request-ID`, OpenAPI revisada, página de error en el frontend y ADRs 0001–0009 |
+| 24 | `readme-portfolio` | P1 | [x] | README de presentación (demo, capturas, arquitectura, decisiones, calidad) en español e inglés, guía técnica en `docs/guia.md` y licencia MIT |
 
 - [x] Logging y gestión de errores homogénea (23)
 - [x] Documentación OpenAPI revisada (23)
