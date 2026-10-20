@@ -8,14 +8,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.errors import UnprocessableError
 from app.models.attendance import Attendance
 from app.models.event import Event
 from app.models.group import Group
 from app.services.events import in_group
 
 
-class InvalidPeriodError(Exception):
-    """La fecha de inicio es posterior a la de fin."""
+class InvalidPeriodError(UnprocessableError):
+    detail = "La fecha de inicio no puede ser posterior a la de fin"
 
 
 @dataclass
@@ -43,7 +44,7 @@ def resolve_period(start: date | None, end: date | None) -> Period:
         year = end.year if end.month >= 9 else end.year - 1
         start = date(year, 9, 1)
     if start > end:
-        raise InvalidPeriodError(start, end)
+        raise InvalidPeriodError()
     return Period(start, end)
 
 

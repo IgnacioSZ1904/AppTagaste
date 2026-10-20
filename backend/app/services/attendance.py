@@ -2,6 +2,7 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
+from app.core.errors import NotFoundError, UnprocessableError
 from app.models.attendance import Attendance
 from app.models.event import Event
 from app.models.group import Group
@@ -10,20 +11,22 @@ from app.schemas.attendance import AttendanceChild, AttendanceRead
 from app.services.events import in_group
 
 
-class EventNotInGroupError(Exception):
+class EventNotInGroupError(NotFoundError):
     """El evento no existe o no es del grupo ni general."""
 
+    detail = "Evento no encontrado en este grupo"
 
-class UnknownChildError(Exception):
+
+class UnknownChildError(UnprocessableError):
     def __init__(self, child_ids: list[int]) -> None:
-        super().__init__(child_ids)
         self.child_ids = child_ids
+        super().__init__("No son niños de este grupo: " + ", ".join(str(i) for i in child_ids))
 
 
 def get_group_event(db: Session, group: Group, event_id: int) -> Event:
     event = db.scalar(select(Event).where(Event.id == event_id, in_group(group.id)))
     if event is None:
-        raise EventNotInGroupError(event_id)
+        raise EventNotInGroupError()
     return event
 
 
