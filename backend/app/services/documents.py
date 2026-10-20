@@ -34,6 +34,14 @@ class UnknownGroupError(Exception):
     pass
 
 
+class DuplicateDriveFileError(Exception):
+    """El fichero de Drive ya está en la biblioteca."""
+
+    def __init__(self, existing: Document) -> None:
+        super().__init__(existing.id)
+        self.existing = existing
+
+
 def slugify(text: str) -> str:
     """ "  Perdón " → "perdon": sin tildes, en minúsculas y con espacios simples."""
     plain = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
@@ -95,6 +103,10 @@ def create_document(
     tag_names: list[str],
     drive_file_id: str | None = None,
 ) -> Document:
+    if drive_file_id:
+        existing = db.scalar(select(Document).where(Document.drive_file_id == drive_file_id))
+        if existing is not None:
+            raise DuplicateDriveFileError(existing)
     if len(content) > MAX_SIZE:
         raise FileTooLargeError()
     mime_type = detect_mime(content)
@@ -110,7 +122,7 @@ def create_document(
         filename=filename,
         mime_type=mime_type,
         size=len(content),
-        drive_file_id=drive_file_id,
+        drive_file_id=drive_file_id or None,
         created_by_id=user.id,
         tags=resolve_tags(db, tag_names),
         file=DocumentFile(content=content),
