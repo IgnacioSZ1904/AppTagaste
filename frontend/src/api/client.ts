@@ -72,10 +72,11 @@ export async function apiFile(path: string): Promise<Blob> {
 function errorMessage(body: unknown, status: number): string {
   if (body && typeof body === 'object' && 'detail' in body) {
     const { detail } = body
-    if (typeof detail === 'string') return detail
-    // Errores de validación de FastAPI: [{ msg: "..." }, ...]
-    if (Array.isArray(detail) && typeof detail[0]?.msg === 'string') {
-      return detail[0].msg.replace(/^Value error, /, '')
+    if (typeof detail === 'string') {
+      // Los 500 traen una referencia para buscar el error en el log del servidor
+      return 'request_id' in body && typeof body.request_id === 'string'
+        ? `${detail} (ref. ${body.request_id})`
+        : detail
     }
   }
   return `Error ${status}`

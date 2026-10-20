@@ -1,21 +1,24 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.errors import ConflictError, ForbiddenError, UnauthorizedError
 from app.core.google import GoogleIdentity
 from app.models.user import Role, User
 from app.schemas.user import UserCreate, UserUpdate
 
 
-class EmailAlreadyExistsError(Exception):
-    pass
+class EmailAlreadyExistsError(ConflictError):
+    detail = "Ya existe un usuario con ese email"
 
 
-class UserInactiveError(Exception):
-    """El usuario está desactivado."""
+class UserInactiveError(ForbiddenError):
+    detail = "Tu cuenta está desactivada. Pide acceso a un administrador."
 
 
-class GoogleAccountMismatchError(Exception):
-    """El email ya está vinculado a otra cuenta de Google."""
+class GoogleAccountMismatchError(UnauthorizedError):
+    """El email ya está vinculado a otra cuenta de Google: se responde como a un token malo."""
+
+    detail = "Token de Google no válido"
 
 
 def get_by_email(db: Session, email: str) -> User | None:
@@ -28,7 +31,7 @@ def list_users(db: Session) -> list[User]:
 
 def create_user(db: Session, data: UserCreate) -> User:
     if get_by_email(db, data.email):
-        raise EmailAlreadyExistsError(data.email)
+        raise EmailAlreadyExistsError()
     user = User(email=data.email.lower(), full_name=data.full_name, role=data.role)
     db.add(user)
     db.commit()
@@ -57,11 +60,11 @@ def login_with_google(db: Session, identity: GoogleIdentity) -> User:
         db.refresh(user)
         return user
     if not user.is_active:
-        raise UserInactiveError(identity.email)
+        raise UserInactiveError()
     if user.google_sub is None:
         # Primer login: vinculamos la cuenta de Google al usuario
         user.google_sub = identity.sub
         db.commit()
     elif user.google_sub != identity.sub:
-        raise GoogleAccountMismatchError(identity.email)
+        raise GoogleAccountMismatchError()
     return user

@@ -1,13 +1,23 @@
+import logging
 from dataclasses import dataclass
 
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 
 from app.core.config import get_settings
+from app.core.errors import UnauthorizedError
+
+logger = logging.getLogger(__name__)
 
 
-class InvalidGoogleTokenError(Exception):
+class InvalidGoogleTokenError(UnauthorizedError):
     """El token de Google no es válido, ha caducado o no es para esta app."""
+
+    def __init__(self, reason: str) -> None:
+        # El motivo va al log; al usuario, un mensaje genérico
+        self.reason = reason
+        logger.warning("Token de Google rechazado: %s", reason)
+        super().__init__("Token de Google no válido")
 
 
 @dataclass(frozen=True)

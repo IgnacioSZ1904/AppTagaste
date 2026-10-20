@@ -9,6 +9,11 @@ from sqlalchemy import ColumnElement, Select, func, literal, select, text
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.errors import (
+    ConflictError,
+    ContentTooLargeError,
+    UnprocessableError,
+)
 from app.models.document import Document, DocumentFile, Tag, document_tags
 from app.models.group import Group
 from app.models.user import Role, User
@@ -33,28 +38,28 @@ UPDATE_SEARCH_VECTOR = text(
 )
 
 
-class FileTooLargeError(Exception):
-    pass
+class FileTooLargeError(ContentTooLargeError):
+    detail = "El fichero no puede pasar de 10 MB"
 
 
-class UnsupportedFileError(Exception):
-    """Solo PDF y Word (.docx)."""
+class UnsupportedFileError(UnprocessableError):
+    detail = "Solo se admiten PDF y Word (.docx)"
 
 
-class InvalidSchoolYearError(Exception):
-    pass
+class InvalidSchoolYearError(UnprocessableError):
+    detail = "Curso escolar no válido (formato 2025-2026, no posterior al actual)"
 
 
-class UnknownGroupError(Exception):
-    pass
+class UnknownGroupError(UnprocessableError):
+    detail = "Grupo no encontrado"
 
 
-class DuplicateDriveFileError(Exception):
+class DuplicateDriveFileError(ConflictError):
     """El fichero de Drive ya está en la biblioteca."""
 
     def __init__(self, existing: Document) -> None:
-        super().__init__(existing.id)
         self.existing = existing
+        super().__init__(f"Ya está en la biblioteca: «{existing.title}»")
 
 
 def slugify(text: str) -> str:
@@ -73,7 +78,7 @@ def check_school_year(value: str) -> str:
     """ "2025-2026": años seguidos y no posterior al curso actual."""
     match = re.fullmatch(r"(\d{4})-(\d{4})", value.strip())
     if not match or int(match[2]) != int(match[1]) + 1 or value.strip() > current_school_year():
-        raise InvalidSchoolYearError(value)
+        raise InvalidSchoolYearError()
     return value.strip()
 
 
@@ -128,7 +133,7 @@ def create_document(
     year = check_school_year(school_year)
     group = db.get(Group, group_id)
     if group is None:
-        raise UnknownGroupError(group_id)
+        raise UnknownGroupError()
     document = Document(
         title=(title or "").strip() or filename.rsplit(".", 1)[0],
         school_year=year,
@@ -171,7 +176,7 @@ def update_document(
     if group_id is not None and group_id != document.group_id:
         group = db.get(Group, group_id)
         if group is None:
-            raise UnknownGroupError(group_id)
+            raise UnknownGroupError()
         document.group_id = group.id
         document.group_name = group.name
     if tag_names is not None:
