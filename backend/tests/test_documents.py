@@ -178,3 +178,19 @@ def test_borrar_el_grupo_conserva_su_nombre(
     assert response.json()["group_id"] is None
     assert response.json()["group_name"] == "1º Confirmación"
     assert db.get(Document, document["id"]) is not None
+
+
+def test_fichero_de_drive_repetido_da_409(upload: Callable[..., dict]) -> None:
+    first = upload(drive_file_id="abc123", title="Reunión del perdón")
+
+    response = upload(drive_file_id="abc123", status=409)
+
+    assert first["id"]
+    assert response["detail"] == "Ya está en la biblioteca: «Reunión del perdón»"
+
+
+def test_desde_el_ordenador_se_puede_repetir(upload: Callable[..., dict]) -> None:
+    first = upload(drive_file_id="")
+    second = upload()
+
+    assert first["id"] != second["id"]
