@@ -10,6 +10,8 @@ import {
   ROLE_LABELS,
 } from '@/auth/roles'
 
+import { LegalLinks } from './LegalLinks'
+
 export function Layout() {
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
@@ -99,6 +101,9 @@ export function Layout() {
       <main className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-y-auto px-4 py-3 sm:py-4">
         <Outlet />
       </main>
+      <footer className="shrink-0 border-t border-slate-200 py-1 text-center">
+        <LegalLinks />
+      </footer>
     </div>
   )
 }

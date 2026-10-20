@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { apiFetch, apiFile } from './client'
 
@@ -18,6 +18,16 @@ export type LibraryDocument = {
   has_text: boolean
   /** Solo al buscar: trozo del texto con lo encontrado entre <mark> y </mark> (sin escapar). */
   snippet?: string | null
+  /** Quien lo subió, los coordinadores y el admin pueden editarlo y eliminarlo. */
+  can_edit: boolean
+}
+
+export type DocumentChanges = {
+  title: string
+  school_year: string
+  /** Sin tocar si el grupo original se borró y no se elige otro. */
+  group_id?: number
+  tags: string[]
 }
 
 export type LibraryFilters = {
@@ -99,3 +109,26 @@ export function schoolYears(today = new Date()): string[] {
     today.getMonth() >= 8 ? today.getFullYear() : today.getFullYear() - 1
   return Array.from({ length: 10 }, (_, i) => `${start - i}-${start - i + 1}`)
 }
+
+/** Tras editar o eliminar se refrescan carpetas, búsqueda y filtros. */
+function useDocumentMutation<T>(mutationFn: (args: T) => Promise<unknown>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn,
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['documents'] }),
+  })
+}
+
+export const useUpdateDocument = () =>
+  useDocumentMutation(
+    ({ id, changes }: { id: number; changes: DocumentChanges }) =>
+      apiFetch<LibraryDocument>(`/documents/${id}`, {
+        method: 'PATCH',
+        json: changes,
+      }),
+  )
+
+export const useDeleteDocument = () =>
+  useDocumentMutation((id: number) =>
+    apiFetch<void>(`/documents/${id}`, { method: 'DELETE' }),
+  )

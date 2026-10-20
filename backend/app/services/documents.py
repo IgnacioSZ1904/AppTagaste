@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.models.document import Document, DocumentFile, Tag, document_tags
 from app.models.group import Group
-from app.models.user import User
+from app.models.user import Role, User
 from app.services.text_extraction import DOCX, PDF, extract_text
 
 MAX_SIZE = 10 * 1024 * 1024
@@ -149,6 +149,47 @@ def create_document(
     return document
 
 
+def can_edit(user: User, document: Document) -> bool:
+    """Quien lo subió, los coordinadores y el admin."""
+    return user.role in (Role.ADMIN, Role.COORDINADOR) or document.created_by_id == user.id
+
+
+def update_document(
+    db: Session,
+    document: Document,
+    *,
+    title: str | None = None,
+    school_year: str | None = None,
+    group_id: int | None = None,
+    tag_names: list[str] | None = None,
+) -> Document:
+    """Cambia los datos del documento (no el fichero). None = no se toca."""
+    if title is not None:
+        document.title = title.strip()
+    if school_year is not None:
+        document.school_year = check_school_year(school_year)
+    if group_id is not None and group_id != document.group_id:
+        group = db.get(Group, group_id)
+        if group is None:
+            raise UnknownGroupError(group_id)
+        document.group_id = group.id
+        document.group_name = group.name
+    if tag_names is not None:
+        document.tags = resolve_tags(db, tag_names)
+    db.flush()
+    # Título y etiquetas cuentan en el buscador
+    db.execute(UPDATE_SEARCH_VECTOR, {"id": document.id})
+    db.commit()
+    db.refresh(document)
+    return document
+
+
+def delete_document(db: Session, document: Document) -> None:
+    """Borra el documento con su fichero; un fichero de Drive se podrá volver a añadir."""
+    db.delete(document)
+    db.commit()
+
+
 def index_document(db: Session, document: Document, content: bytes) -> None:
     """Extrae el texto del fichero y actualiza el índice del buscador."""
     document.content_text = extract_text(content, document.mime_type)
@@ -229,7 +270,7 @@ def list_tags(db: Session) -> list[Tag]:
     return list(db.scalars(select(Tag).order_by(Tag.slug)))
 
 
-def to_read(document: Document, text_found: bool, snippet: str | None = None) -> dict:
+def to_read(document: Document, user: User, text_found: bool, snippet: str | None = None) -> dict:
     return {
         "id": document.id,
         "title": document.title,
@@ -244,4 +285,5 @@ def to_read(document: Document, text_found: bool, snippet: str | None = None) ->
         "created_at": document.created_at,
         "has_text": text_found,
         "snippet": snippet,
+        "can_edit": can_edit(user, document),
     }

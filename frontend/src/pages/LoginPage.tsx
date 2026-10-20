@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Navigate, useLocation } from 'react-router'
 
 import { useAuth } from '@/auth/context'
+import { LegalLinks } from '@/components/LegalLinks'
 
 export function LoginPage() {
   const { isAuthenticated, login } = useAuth()
@@ -31,7 +32,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="bg-brand-50 flex min-h-dvh items-center justify-center px-4">
+    <div className="bg-brand-50 flex min-h-dvh flex-col items-center justify-center gap-4 px-4 py-6">
       <div className="border-brand-500 w-full max-w-sm space-y-6 rounded-2xl border-t-4 bg-white p-8 text-center shadow-lg">
         <img
           src="/escudo.png"
@@ -42,6 +43,11 @@ export function LoginPage() {
           <h1 className="text-brand-700 text-2xl font-bold">AppTagaste</h1>
           <p className="text-slate-600">Calendario de catequesis</p>
         </div>
+        <p className="text-sm text-slate-600">
+          Organiza la catequesis del colegio: calendario de reuniones y
+          convivencias de cada grupo, pase de lista y biblioteca de recursos
+          para los catequistas. Entra con tu cuenta de Google.
+        </p>
         {googleClientId ? (
           <div className="flex justify-center">
             <GoogleLogin
@@ -67,6 +73,7 @@ export function LoginPage() {
           </p>
         )}
       </div>
+      <LegalLinks />
     </div>
   )
 }

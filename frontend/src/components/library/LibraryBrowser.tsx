@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 
 import {
   downloadDocument,
+  useDeleteDocument,
   useDocuments,
   useLibraryFilters,
   type LibraryDocument,
@@ -13,6 +14,7 @@ import { libraryPath } from '@/lib/libraryPath'
 import { Breadcrumbs } from './Breadcrumbs'
 import { DocumentCard } from './DocumentCard'
 import { DocumentPreview } from './DocumentPreview'
+import { EditDocumentModal } from './EditDocumentModal'
 import { FolderGrid } from './FolderGrid'
 import { LibrarySearch } from './LibrarySearch'
 
@@ -28,6 +30,8 @@ export function LibraryBrowser() {
   const docs = useDocuments({ schoolYear: curso, group: grupo, q, tags })
   const filters = useLibraryFilters()
   const [preview, setPreview] = useState<LibraryDocument | null>(null)
+  const [editing, setEditing] = useState<LibraryDocument | null>(null)
+  const remove = useDeleteDocument()
   const [downloading, setDownloading] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -66,6 +70,20 @@ export function LibraryBrowser() {
       setError(`No se pudo descargar «${doc.title}»: ${(e as Error).message}`)
     } finally {
       setDownloading(null)
+    }
+  }
+
+  const handleDelete = (doc: LibraryDocument) => {
+    if (
+      window.confirm(
+        `¿Eliminar «${doc.title}» de la biblioteca? No se puede deshacer.`,
+      )
+    ) {
+      setError(null)
+      remove.mutate(doc.id, {
+        onError: (e) =>
+          setError(`No se pudo eliminar «${doc.title}»: ${e.message}`),
+      })
     }
   }
 
@@ -128,6 +146,8 @@ export function LibraryBrowser() {
               onPreview={() => setPreview(doc)}
               onDownload={() => download(doc)}
               downloading={downloading === doc.id}
+              onEdit={() => setEditing(doc)}
+              onDelete={() => handleDelete(doc)}
             />
           ))}
         </ul>
@@ -162,6 +182,9 @@ export function LibraryBrowser() {
         </p>
       )}
       {content}
+      {editing && (
+        <EditDocumentModal doc={editing} onClose={() => setEditing(null)} />
+      )}
       {preview && (
         <DocumentPreview
           doc={preview}

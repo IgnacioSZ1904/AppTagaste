@@ -15,12 +15,17 @@ import { GroupsPage } from '@/pages/GroupsPage'
 import { LibraryPage } from '@/pages/LibraryPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { PrivacyPage } from '@/pages/PrivacyPage'
 import { StatsPage } from '@/pages/StatsPage'
 import { StatusPage } from '@/pages/StatusPage'
+import { TermsPage } from '@/pages/TermsPage'
 import { UsersPage } from '@/pages/UsersPage'
 
 export const routes: RouteObject[] = [
   { path: '/login', element: <LoginPage /> },
+  // Públicas: Google las pide para la pantalla de consentimiento
+  { path: '/privacidad', element: <PrivacyPage /> },
+  { path: '/condiciones', element: <TermsPage /> },
   {
     element: <RequireAuth />,
     children: [

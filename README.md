@@ -144,13 +144,15 @@ Todos aceptan `?from=AAAA-MM-DD&to=AAAA-MM-DD` (incluidos); por defecto, del 1 d
 
 ## Biblioteca
 
-Recursos de reuniones y convivencias de todos los cursos. Cada documento lleva **curso escolar** (`2025-2026`), **grupo** (se elige entre los existentes y se guarda su nombre, para que siga clasificado aunque el grupo se borre) y **etiquetas** por temática. Son de **solo lectura**: se editan en Drive y se suben terminados. La app guarda una copia del fichero, así que no se pierde aunque se borre de Drive.
+Recursos de reuniones y convivencias de todos los cursos. Cada documento lleva **curso escolar** (`2025-2026`), **grupo** (se elige entre los existentes y se guarda su nombre, para que siga clasificado aunque el grupo se borre) y **etiquetas** por temática. El **fichero** no se cambia en la app (se edita en Drive y se sube terminado), pero sus datos sí: quien lo subió, los coordinadores y el admin pueden cambiar título, curso, grupo y etiquetas, o eliminarlo. La app guarda una copia del fichero, así que no se pierde aunque se borre de Drive.
 
 | Endpoint | Qué hace |
 |----------|----------|
 | `POST /api/v1/documents` (multipart: `file`, `school_year`, `group_id`, `title`, `tags`) | Añade un documento. `tags` separadas por comas; las nuevas se crean ("Perdón" = "perdon") |
 | `GET /api/v1/documents?school_year=&group=&tag=&q=` | Lista sin el fichero. Varias `tag` = los que tienen todas. `q` = buscador (abajo) |
 | `GET /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/file` | Datos del documento y su copia (se abre en el navegador) |
+| `PATCH /api/v1/documents/{id}` (JSON: `title`, `school_year`, `group_id`, `tags`) | Cambia solo lo que se envía y actualiza el buscador. 403 si no lo subiste tú y eres monitor |
+| `DELETE /api/v1/documents/{id}` | Elimina el documento y su copia (204). Un fichero de Drive eliminado se puede volver a añadir |
 | `GET /api/v1/documents/filters`, `GET /api/v1/tags` | Cursos, grupos y etiquetas usados; todas las etiquetas |
 
 Solo para admin, coordinadores y monitores. Se admiten **PDF y Word (.docx)** de hasta **10 MB** (se comprueba el contenido, no solo el nombre).
@@ -191,6 +193,21 @@ En la web, **Biblioteca** muestra una carpeta por **curso** y, dentro, una por *
 - El **buscador** y las **etiquetas** buscan dentro de la carpeta abierta (en la raíz, en toda la biblioteca); **Buscar en toda la biblioteca** quita la carpeta. Los resultados indican curso y grupo y resaltan el trozo encontrado.
 - **Vista previa**: los PDF con el visor del navegador y los Word convertidos en la página (`docx-preview`, se descarga solo al abrir un Word). **Descargar** guarda el fichero con su nombre original.
 - La carpeta y la búsqueda quedan en la URL (`/biblioteca/2025-2026/Confirmación A?q=perdón&tag=dinámica`), así que se puede copiar y compartir.
+
+## Publicar la app en Google
+
+Mientras la app de Google está en modo **Prueba**, solo entran las cuentas de la lista de usuarios de prueba (las demás ven el error 403 `access_denied`). Para que entre cualquiera, en el proyecto de Google Cloud del login:
+
+1. **Google Auth Platform → Marca**:
+   - Página principal: `https://app-tagaste.vercel.app`
+   - Política de Privacidad: `https://app-tagaste.vercel.app/privacidad`
+   - Condiciones del Servicio: `https://app-tagaste.vercel.app/condiciones`
+   - Dominios autorizados: `app-tagaste.vercel.app`
+   - Email de asistencia y de contacto del desarrollador.
+2. **Google Auth Platform → Público → Publicar app** (pasa a *En producción*). Con solo `drive.file` y el perfil básico no hace falta verificar la app.
+3. Prueba a entrar con una cuenta que no esté en la lista de usuarios de prueba.
+
+Las páginas `/privacidad` y `/condiciones` son públicas (se ven sin iniciar sesión) y están enlazadas desde el login y el pie de la app. Si cambia el responsable de los datos (por ejemplo, el colegio), hay que actualizar `frontend/src/pages/PrivacyPage.tsx`.
 
 ## Tests y calidad
 

@@ -73,3 +73,16 @@
     color: white;
   }
 }
+
+/* Páginas legales: títulos y listas legibles */
+@layer components {
+  .legal h2 {
+    @apply text-brand-700 pt-2 text-lg font-semibold;
+  }
+  .legal ul {
+    @apply list-disc space-y-1 pl-5;
+  }
+  .legal a {
+    @apply text-brand-700 underline;
+  }
+}

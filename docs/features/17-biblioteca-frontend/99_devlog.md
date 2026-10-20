@@ -27,3 +27,9 @@
 ## [2026-10-20] — Pruebas manuales y cierre
 - Al probar, Google respondió 403 `access_denied`: la app está en modo Prueba y la cuenta no era usuario de prueba. Se añadió en Google Auth Platform → Público
 - Pruebas manuales OK (Ignacio); criterios, tareas y BACKLOG cerrados
+
+## [2026-10-20] — Arreglo: editar y eliminar documentos
+- Botones "Editar" y "Eliminar" en la tarjeta, solo si `can_edit`. "Editar" abre un modal con título, curso, grupo y etiquetas (si el grupo original se borró, se puede dejar su nombre); "Eliminar" pide confirmación
+- Tras editar o eliminar se refrescan carpetas, búsqueda y filtros (`['documents']`)
+- Texto del modal de añadir: el fichero no se cambia, sus datos sí
+- 71 tests, lint y build en verde. Backend en el devlog de la 14

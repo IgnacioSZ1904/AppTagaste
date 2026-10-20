@@ -22,6 +22,8 @@ type Props = {
   onPreview: () => void
   onDownload: () => void
   downloading: boolean
+  onEdit: () => void
+  onDelete: () => void
 }
 
 export function DocumentCard({
@@ -32,6 +34,8 @@ export function DocumentCard({
   onPreview,
   onDownload,
   downloading,
+  onEdit,
+  onDelete,
 }: Props) {
   return (
     <li className="space-y-2 rounded-lg border border-slate-200 bg-white p-4">
@@ -50,7 +54,7 @@ export function DocumentCard({
               .join(' · ')}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             className="btn-primary py-1 text-sm"
@@ -68,6 +72,26 @@ export function DocumentCard({
           >
             {downloading ? 'Descargando…' : 'Descargar'}
           </button>
+          {doc.can_edit && (
+            <>
+              <button
+                type="button"
+                className="btn-secondary py-1 text-sm"
+                aria-label={`Editar ${doc.title}`}
+                onClick={onEdit}
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                className="btn-danger py-1 text-sm"
+                aria-label={`Eliminar ${doc.title}`}
+                onClick={onDelete}
+              >
+                Eliminar
+              </button>
+            </>
+          )}
         </div>
       </div>
       {doc.snippet && <Snippet text={doc.snippet} />}
