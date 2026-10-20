@@ -5,6 +5,7 @@ import {
   AddDocumentsModal,
   type PendingFile,
 } from '@/components/AddDocumentsModal'
+import { LibraryBrowser } from '@/components/library/LibraryBrowser'
 import { pickDriveFiles } from '@/lib/googlePicker'
 
 // Solo los ficheros que el usuario elige en el selector (Google no exige verificar la app)
@@ -87,8 +88,9 @@ export function LibraryPage() {
       )}
       <p className="text-slate-600">
         Recursos de reuniones y convivencias de todos los cursos: PDF, Word y
-        Google Docs de hasta 10 MB. Pronto podrás buscarlos y filtrarlos aquí.
+        Google Docs de hasta 10 MB.
       </p>
+      <LibraryBrowser />
 
       {pending && (
         <AddDocumentsModal files={pending} onClose={() => setPending(null)} />

@@ -1,8 +1,14 @@
 import { useEffect, type ReactNode } from 'react'
 
-type Props = { title: string; onClose: () => void; children: ReactNode }
+type Props = {
+  title: string
+  onClose: () => void
+  children: ReactNode
+  /** wide: para vistas previas de documentos. */
+  size?: 'normal' | 'wide'
+}
 
-export function Modal({ title, onClose, children }: Props) {
+export function Modal({ title, onClose, children, size = 'normal' }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -18,7 +24,7 @@ export function Modal({ title, onClose, children }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="border-brand-500 max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border-t-4 bg-white p-5 shadow-xl sm:max-w-lg sm:rounded-2xl"
+        className={`border-brand-500 max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border-t-4 bg-white p-5 shadow-xl sm:rounded-2xl ${size === 'wide' ? 'sm:max-w-4xl' : 'sm:max-w-lg'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
