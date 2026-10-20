@@ -2,11 +2,17 @@ import type { RouteObject } from 'react-router'
 
 import { RequireAuth } from '@/auth/RequireAuth'
 import { RequireRole } from '@/auth/RequireRole'
-import { canManageUsers, canSeeGroups, canSeeStats } from '@/auth/roles'
+import {
+  canManageUsers,
+  canSeeGroups,
+  canSeeStats,
+  canUseLibrary,
+} from '@/auth/roles'
 import { Layout } from '@/components/Layout'
 import { AttendancePage } from '@/pages/AttendancePage'
 import { GroupPage } from '@/pages/GroupPage'
 import { GroupsPage } from '@/pages/GroupsPage'
+import { LibraryPage } from '@/pages/LibraryPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { StatsPage } from '@/pages/StatsPage'
@@ -42,6 +48,19 @@ export const routes: RouteObject[] = [
                 path: 'grupos/:id/eventos/:eventId/lista',
                 element: <AttendancePage />,
               },
+            ],
+          },
+          {
+            element: (
+              <RequireRole
+                allow={canUseLibrary}
+                message="La biblioteca es para monitores, coordinadores y administradores."
+              />
+            ),
+            children: [
+              { path: 'biblioteca', element: <LibraryPage /> },
+              { path: 'biblioteca/:curso', element: <LibraryPage /> },
+              { path: 'biblioteca/:curso/:grupo', element: <LibraryPage /> },
             ],
           },
           {

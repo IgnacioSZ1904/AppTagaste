@@ -28,3 +28,9 @@ export const canTakeAttendance = (user: User | null) => user?.role === 'monitor'
 /** Estadísticas de asistencia de todos los grupos. */
 export const canSeeStats = (user: User | null) =>
   user?.role === 'admin' || user?.role === 'coordinador'
+
+/** Biblioteca de recursos: ver, abrir y añadir documentos. */
+export const canUseLibrary = (user: User | null) =>
+  user?.role === 'admin' ||
+  user?.role === 'coordinador' ||
+  user?.role === 'monitor'

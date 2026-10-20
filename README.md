@@ -142,6 +142,56 @@ Asistencia por grupo, por evento y por niño, a partir de los pases de lista. So
 
 Todos aceptan `?from=AAAA-MM-DD&to=AAAA-MM-DD` (incluidos); por defecto, del 1 de septiembre del curso actual a hoy. Entran los eventos del grupo y los generales. Los eventos sin lista pasada no cuentan en el %.
 
+## Biblioteca
+
+Recursos de reuniones y convivencias de todos los cursos. Cada documento lleva **curso escolar** (`2025-2026`), **grupo** (se elige entre los existentes y se guarda su nombre, para que siga clasificado aunque el grupo se borre) y **etiquetas** por temática. Son de **solo lectura**: se editan en Drive y se suben terminados. La app guarda una copia del fichero, así que no se pierde aunque se borre de Drive.
+
+| Endpoint | Qué hace |
+|----------|----------|
+| `POST /api/v1/documents` (multipart: `file`, `school_year`, `group_id`, `title`, `tags`) | Añade un documento. `tags` separadas por comas; las nuevas se crean ("Perdón" = "perdon") |
+| `GET /api/v1/documents?school_year=&group=&tag=&q=` | Lista sin el fichero. Varias `tag` = los que tienen todas. `q` = buscador (abajo) |
+| `GET /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/file` | Datos del documento y su copia (se abre en el navegador) |
+| `GET /api/v1/documents/filters`, `GET /api/v1/tags` | Cursos, grupos y etiquetas usados; todas las etiquetas |
+
+Solo para admin, coordinadores y monitores. Se admiten **PDF y Word (.docx)** de hasta **10 MB** (se comprueba el contenido, no solo el nombre).
+
+**Espacio:** los ficheros van en la base de datos y Neon gratis tiene 0,5 GB. Para ver lo que ocupan: `SELECT pg_size_pretty(pg_total_relation_size('document_files'));`
+
+## Añadir documentos desde Drive
+
+En la web, **Biblioteca → Añadir desde Drive**: se da permiso a la app (solo para los ficheros que elijas, permiso `drive.file`), se eligen uno o varios Google Docs, PDF o Word y se indican curso, grupo y etiquetas. El navegador descarga cada fichero de Drive (los Google Docs como .docx) y lo sube a `POST /api/v1/documents` con su `drive_file_id`: el token de Drive nunca llega a la API. Un fichero de Drive que ya está en la biblioteca da **409**. También se puede **Subir desde el ordenador**.
+
+Configuración en Google Cloud (el mismo proyecto del login con Google):
+
+1. **APIs y servicios → Biblioteca:** activa **Google Picker API** y **Google Drive API**.
+2. **Credenciales → Crear credenciales → Clave de API.** Restringe la clave a los sitios web `http://localhost:5173/*` y `https://app-tagaste.vercel.app/*`, y a la **Google Picker API**.
+3. **Pantalla de consentimiento de OAuth → Acceso a datos:** añade el permiso `.../auth/drive.file`.
+4. Copia el **número del proyecto** (panel principal del proyecto).
+5. En `frontend/.env` y en Vercel (**Settings → Environment Variables**): `VITE_GOOGLE_API_KEY` = la clave y `VITE_GOOGLE_APP_ID` = el número del proyecto. En Vercel, vuelve a desplegar para que se apliquen.
+
+## Buscador
+
+`GET /api/v1/documents?q=...` busca en el **título**, las **etiquetas** y el **texto** de los documentos (título y etiquetas pesan más) y los ordena por relevancia. Se combina con `school_year`, `group` y `tag`.
+
+- Sin tildes ni mayúsculas y con variantes: `perdon` encuentra "Perdón" y "perdonar".
+- Varias palabras = los que tienen todas; `"oración de la mañana"` entre comillas = frase exacta.
+- La última palabra vale empezada: `dinam` encuentra "dinámica".
+- Cada resultado trae `snippet`: un trozo del texto con lo encontrado entre `<mark>` y `</mark>`.
+
+El texto se saca al subir el documento (PDF y Word). Un PDF escaneado (solo imagen) se guarda igual con `has_text: false` y solo se encuentra por título y etiquetas. Para rehacer el índice de todos los documentos:
+
+```bash
+docker compose exec api python -m app.cli reindex-documents
+```
+
+## Navegar la biblioteca
+
+En la web, **Biblioteca** muestra una carpeta por **curso** y, dentro, una por **grupo** con sus documentos. Arriba, las migas (Biblioteca › 2025-2026 › Confirmación A) para volver.
+
+- El **buscador** y las **etiquetas** buscan dentro de la carpeta abierta (en la raíz, en toda la biblioteca); **Buscar en toda la biblioteca** quita la carpeta. Los resultados indican curso y grupo y resaltan el trozo encontrado.
+- **Vista previa**: los PDF con el visor del navegador y los Word convertidos en la página (`docx-preview`, se descarga solo al abrir un Word). **Descargar** guarda el fichero con su nombre original.
+- La carpeta y la búsqueda quedan en la URL (`/biblioteca/2025-2026/Confirmación A?q=perdón&tag=dinámica`), así que se puede copiar y compartir.
+
 ## Tests y calidad
 
 Con los contenedores levantados:
