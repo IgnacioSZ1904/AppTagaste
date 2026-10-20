@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
+    request: Request,
     db: DbSession,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
 ) -> User:
@@ -30,6 +31,8 @@ def get_current_user(
     user = db.get(User, user_id) if user_id is not None else None
     if user is None or not user.is_active:
         raise unauthorized
+    # Para la línea de log de la petición (middleware)
+    request.state.user_id = user.id
     return user
 
 
