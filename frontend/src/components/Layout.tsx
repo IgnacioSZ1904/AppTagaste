@@ -6,6 +6,7 @@ import {
   canManageUsers,
   canSeeGroups,
   canSeeStats,
+  canUseLibrary,
   ROLE_LABELS,
 } from '@/auth/roles'
 
@@ -20,6 +21,7 @@ export function Layout() {
       label: canManageUsers(user) ? 'Grupos' : 'Mis grupos',
       show: canSeeGroups(user),
     },
+    { to: '/biblioteca', label: 'Biblioteca', show: canUseLibrary(user) },
     { to: '/estadisticas', label: 'Estadísticas', show: canSeeStats(user) },
     { to: '/usuarios', label: 'Usuarios', show: canManageUsers(user) },
     { to: '/estado', label: 'Estado', show: true },
