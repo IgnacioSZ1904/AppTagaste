@@ -15,14 +15,11 @@ export class ApiError extends Error {
 /** `json` para enviar JSON; `form` para enviar ficheros (multipart). */
 type ApiInit = Omit<RequestInit, 'body'> & { json?: unknown; form?: FormData }
 
-/**
- * Llama a la API y devuelve el JSON (o undefined si no hay cuerpo).
- * Añade el token de sesión y lanza ApiError si la respuesta no es 2xx.
- */
-export async function apiFetch<T>(
+/** Hace la petición con el token de sesión; avisa si la sesión ha caducado. */
+async function request(
   path: string,
-  { json, form, headers, ...init }: ApiInit = {},
-): Promise<T> {
+  { json, form, headers, ...init }: ApiInit,
+): Promise<Response> {
   const token = getToken()
   let response: Response
   try {
@@ -41,7 +38,18 @@ export async function apiFetch<T>(
   }
 
   if (response.status === 401 && token) notifyUnauthorized()
+  return response
+}
 
+/**
+ * Llama a la API y devuelve el JSON (o undefined si no hay cuerpo).
+ * Añade el token de sesión y lanza ApiError si la respuesta no es 2xx.
+ */
+export async function apiFetch<T>(
+  path: string,
+  init: ApiInit = {},
+): Promise<T> {
+  const response = await request(path, init)
   const body: unknown =
     response.status === 204
       ? undefined
@@ -49,6 +57,16 @@ export async function apiFetch<T>(
   if (!response.ok)
     throw new ApiError(response.status, errorMessage(body, response.status))
   return body as T
+}
+
+/** Descarga un fichero de la API (con el token) como Blob. */
+export async function apiFile(path: string): Promise<Blob> {
+  const response = await request(path, {})
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => null)
+    throw new ApiError(response.status, errorMessage(body, response.status))
+  }
+  return response.blob()
 }
 
 function errorMessage(body: unknown, status: number): string {
