@@ -144,13 +144,15 @@ Todos aceptan `?from=AAAA-MM-DD&to=AAAA-MM-DD` (incluidos); por defecto, del 1 d
 
 ## Biblioteca
 
-Recursos de reuniones y convivencias de todos los cursos. Cada documento lleva **curso escolar** (`2025-2026`), **grupo** (se elige entre los existentes y se guarda su nombre, para que siga clasificado aunque el grupo se borre) y **etiquetas** por temática. Son de **solo lectura**: se editan en Drive y se suben terminados. La app guarda una copia del fichero, así que no se pierde aunque se borre de Drive.
+Recursos de reuniones y convivencias de todos los cursos. Cada documento lleva **curso escolar** (`2025-2026`), **grupo** (se elige entre los existentes y se guarda su nombre, para que siga clasificado aunque el grupo se borre) y **etiquetas** por temática. El **fichero** no se cambia en la app (se edita en Drive y se sube terminado), pero sus datos sí: quien lo subió, los coordinadores y el admin pueden cambiar título, curso, grupo y etiquetas, o eliminarlo. La app guarda una copia del fichero, así que no se pierde aunque se borre de Drive.
 
 | Endpoint | Qué hace |
 |----------|----------|
 | `POST /api/v1/documents` (multipart: `file`, `school_year`, `group_id`, `title`, `tags`) | Añade un documento. `tags` separadas por comas; las nuevas se crean ("Perdón" = "perdon") |
 | `GET /api/v1/documents?school_year=&group=&tag=&q=` | Lista sin el fichero. Varias `tag` = los que tienen todas. `q` = buscador (abajo) |
 | `GET /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/file` | Datos del documento y su copia (se abre en el navegador) |
+| `PATCH /api/v1/documents/{id}` (JSON: `title`, `school_year`, `group_id`, `tags`) | Cambia solo lo que se envía y actualiza el buscador. 403 si no lo subiste tú y eres monitor |
+| `DELETE /api/v1/documents/{id}` | Elimina el documento y su copia (204). Un fichero de Drive eliminado se puede volver a añadir |
 | `GET /api/v1/documents/filters`, `GET /api/v1/tags` | Cursos, grupos y etiquetas usados; todas las etiquetas |
 
 Solo para admin, coordinadores y monitores. Se admiten **PDF y Word (.docx)** de hasta **10 MB** (se comprueba el contenido, no solo el nombre).
