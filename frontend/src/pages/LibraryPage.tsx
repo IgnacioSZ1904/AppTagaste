@@ -78,7 +78,7 @@ export function LibraryPage() {
       {!driveReady && (
         <p className="text-sm text-slate-500">
           Para añadir desde Drive falta configurar{' '}
-          <code>VITE_GOOGLE_API_KEY</code> (ver README).
+          <code>VITE_GOOGLE_API_KEY</code> (ver docs/guia.md).
         </p>
       )}
       {error && (
