@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.types import LocalDateTime
 
@@ -26,6 +26,17 @@ class DocumentRead(BaseModel):
     has_text: bool
     # Solo al buscar: trozo del texto con lo encontrado entre <mark> y </mark>
     snippet: str | None = None
+    # Quien lo subió, los coordinadores y el admin pueden editarlo y eliminarlo
+    can_edit: bool
+
+
+class DocumentUpdate(BaseModel):
+    """Solo se cambia lo que se envía. El fichero no se puede cambiar."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=200, pattern=r"\S")
+    school_year: str | None = None
+    group_id: int | None = None
+    tags: list[str] | None = None
 
 
 class LibraryFilters(BaseModel):
