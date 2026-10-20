@@ -4,13 +4,16 @@ from collections.abc import Callable
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
+from app import cli
 from app.models.document import Document
 from app.models.group import Group
 from app.models.user import Role, User
 from app.services import documents as documents_service
 from tests.conftest import auth_headers
+from tests.files import docx_with_text, pdf_with_text
 
 URL = "/api/v1/documents"
 PDF = b"%PDF-1.4\n% prueba\n"
@@ -72,6 +75,8 @@ def test_monitor_anade_un_pdf(upload: Callable[..., dict], monitor: User, group:
         ],
         "created_by": monitor.full_name,
         "created_at": document["created_at"],
+        "has_text": False,
+        "snippet": None,
     }
 
 
@@ -194,3 +199,119 @@ def test_desde_el_ordenador_se_puede_repetir(upload: Callable[..., dict]) -> Non
     second = upload()
 
     assert first["id"] != second["id"]
+
+
+@pytest.fixture
+def search(client: TestClient, monitor: User) -> Callable[..., list[dict]]:
+    def _search(q: str, **params: str) -> list[dict]:
+        response = client.get(URL, params={"q": q, **params}, headers=auth_headers(monitor))
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    return _search
+
+
+def ids_of(documents: list[dict]) -> list[int]:
+    return [d["id"] for d in documents]
+
+
+def test_busca_en_el_texto_sin_tildes_y_con_variantes(
+    upload: Callable[..., dict], search: Callable[..., list[dict]]
+) -> None:
+    perdon = upload(
+        content=pdf_with_text("Dinámica: pedimos perdón por lo que hicimos mal."),
+        filename="sesion1.pdf",
+    )
+    upload(content=docx_with_text("Juegos para la convivencia"), filename="juegos.docx")
+
+    assert perdon["has_text"]
+    assert ids_of(search("perdon")) == [perdon["id"]]
+    assert ids_of(search("perdonar")) == [perdon["id"]]
+    assert ids_of(search("DINAMICAS")) == [perdon["id"]]
+    assert search("perdón")[0]["snippet"] == (
+        "Dinámica: pedimos <mark>perdón</mark> por lo que hicimos mal."
+    )
+
+
+def test_busca_en_tablas_de_word(
+    upload: Callable[..., dict], search: Callable[..., list[dict]]
+) -> None:
+    document = upload(
+        content=docx_with_text("Material", table=[["Gymkana", "Pañuelos"]]), filename="g.docx"
+    )
+
+    assert ids_of(search("panuelo")) == [document["id"]]
+
+
+def test_varias_palabras_frase_y_prefijo(
+    upload: Callable[..., dict], search: Callable[..., list[dict]]
+) -> None:
+    a = upload(content=pdf_with_text("La oración de la mañana en grupo"), filename="a.pdf")
+    b = upload(content=pdf_with_text("Grupo de oración y mañana de juegos"), filename="b.pdf")
+
+    assert set(ids_of(search("oración mañana"))) == {a["id"], b["id"]}
+    assert ids_of(search("oración juegos")) == [b["id"]]
+    assert ids_of(search('"oración de la mañana"')) == [a["id"]]
+    assert set(ids_of(search("orac"))) == {a["id"], b["id"]}
+    assert ids_of(search("oración jue")) == [b["id"]]
+    assert search("nada que ver") == []
+
+
+def test_titulo_y_etiquetas_pesan_mas_que_el_texto(
+    upload: Callable[..., dict], search: Callable[..., list[dict]]
+) -> None:
+    in_text = upload(content=pdf_with_text("Hablamos de la amistad"), filename="texto.pdf")
+    in_tag = upload(tags="Amistad", filename="otra.pdf")
+    in_title = upload(title="Dinámica de la amistad", filename="titulo.pdf")
+
+    found = search("amistad")
+
+    assert ids_of(found)[2] == in_text["id"]
+    assert set(ids_of(found)[:2]) == {in_tag["id"], in_title["id"]}
+    # Sin texto (PDF escaneado) se encuentra por título y etiquetas, sin fragmento
+    assert found[0]["has_text"] is False
+    assert found[0]["snippet"] is None
+
+
+def test_busqueda_con_filtros(
+    upload: Callable[..., dict], search: Callable[..., list[dict]]
+) -> None:
+    content = pdf_with_text("Eucaristía de inicio de curso")
+    old = upload(content=content, filename="a.pdf", school_year="2024-2025", tags="misa")
+    new = upload(content=content, filename="b.pdf")
+
+    assert set(ids_of(search("eucaristia"))) == {old["id"], new["id"]}
+    assert ids_of(search("eucaristia", school_year="2024-2025")) == [old["id"]]
+    assert ids_of(search("eucaristia", tag="misa")) == [old["id"]]
+    assert ids_of(search("eucaristia", group="Otro grupo")) == []
+
+
+def test_busqueda_vacia_o_rara_no_falla(
+    upload: Callable[..., dict], search: Callable[..., list[dict]]
+) -> None:
+    document = upload()
+
+    assert ids_of(search("  ")) == [document["id"]]
+    for q in ["de", "-", '"', "a OR", "perdón -", "(x) & y:* | !z"]:
+        search(q)
+
+
+def test_reindex_documents(
+    db: Session,
+    upload: Callable[..., dict],
+    search: Callable[..., list[dict]],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    document = upload(content=pdf_with_text("Reunión de padres"), filename="r.pdf")
+    upload()
+    db.execute(update(Document).values(content_text=None, search_vector=None))
+    assert search("padres") == []
+    monkeypatch.setattr(cli, "SessionLocal", lambda: db)
+
+    assert cli.main(["reindex-documents"]) == 0
+
+    assert capsys.readouterr().out == "Documentos indexados: 2 (1 sin texto)\n"
+    # El comando cierra su sesión: se busca directamente en el servicio
+    found = documents_service.list_documents(db, q="padres")
+    assert [d.id for d, _, _ in found] == [document["id"]]

@@ -62,7 +62,7 @@ def create_document(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Grupo no encontrado"
         ) from None
-    return documents_service.to_read(document)
+    return documents_service.to_read(document, bool(document.content_text))
 
 
 @router.get("/documents", response_model=list[DocumentRead])
@@ -72,9 +72,16 @@ def list_documents(
     school_year: str | None = None,
     group: Annotated[str | None, Query(description="Nombre del grupo")] = None,
     tag: Annotated[list[str] | None, Query(description="Varias = los que tienen todas")] = None,
+    q: Annotated[
+        str | None,
+        Query(
+            max_length=200,
+            description='Buscador: palabras (todas), "frase exacta"; ordena por relevancia',
+        ),
+    ] = None,
 ) -> list[dict]:
-    documents = documents_service.list_documents(db, school_year, group, tag)
-    return [documents_service.to_read(d) for d in documents]
+    rows = documents_service.list_documents(db, school_year, group, tag, q)
+    return [documents_service.to_read(*row) for row in rows]
 
 
 # Antes de /documents/{document_id} para que "filters" no se tome como id
@@ -92,7 +99,8 @@ def get_document_or_404(document_id: int, db: DbSession) -> Document:
 
 @router.get("/documents/{document_id}", response_model=DocumentRead)
 def get_document(document_id: int, db: DbSession, _: Librarian) -> dict:
-    return documents_service.to_read(get_document_or_404(document_id, db))
+    document = get_document_or_404(document_id, db)
+    return documents_service.to_read(document, bool(document.content_text))
 
 
 @router.get(
