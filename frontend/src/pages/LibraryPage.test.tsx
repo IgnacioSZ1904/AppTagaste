@@ -12,6 +12,7 @@ import {
   mockApi,
   monitor,
   renderRoute,
+  requests,
   usuario,
 } from '@/test/render'
 
@@ -41,6 +42,7 @@ const libDoc = (
   created_by: 'Luis Pérez',
   created_at: '2026-10-01T10:00:00Z',
   has_text: true,
+  can_edit: false,
   ...extra,
 })
 
@@ -353,5 +355,94 @@ describe('Biblioteca', () => {
     renderRoute('/biblioteca', { token: 't' })
 
     expect(await screen.findByText(/Aún no hay documentos/)).toBeInTheDocument()
+  })
+
+  it('edita curso, grupo, título y etiquetas de un documento propio', async () => {
+    const mine = { ...reunion, can_edit: true }
+    const fetchMock = mockApi(
+      meHandler(monitor),
+      getHandler('/groups', [groupA, groupB]),
+      documentsHandler([mine, oracion]),
+      (url, init) =>
+        url.pathname === `/api/v1/documents/${mine.id}` &&
+        init.method === 'PATCH'
+          ? { body: { ...mine, title: 'Nuevo' } }
+          : undefined,
+    )
+    renderRoute('/biblioteca/2025-2026/Confirmaci%C3%B3n%20A', { token: 't' })
+
+    // Solo en el que puede editar
+    await screen.findByRole('button', { name: 'Editar Reunión del perdón' })
+    expect(
+      screen.queryByRole('button', { name: 'Editar Oración final' }),
+    ).not.toBeInTheDocument()
+    const listsBefore = documentRequests(fetchMock).length
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Editar Reunión del perdón' }),
+    )
+    const dialog = await screen.findByRole('dialog')
+    const title = within(dialog).getByLabelText('Título')
+    await userEvent.clear(title)
+    await userEvent.type(title, 'Nuevo')
+    await userEvent.selectOptions(
+      within(dialog).getByLabelText('Curso escolar'),
+      '2024-2025',
+    )
+    await userEvent.selectOptions(
+      await within(dialog).findByRole('combobox', { name: 'Grupo' }),
+      groupB.name,
+    )
+    const tags = within(dialog).getByLabelText(/Etiquetas/)
+    await userEvent.clear(tags)
+    await userEvent.type(tags, 'amistad, oración')
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Guardar' }),
+    )
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    const [, init] = fetchMock.mock.calls.find(
+      ([, i]) => i?.method === 'PATCH',
+    )!
+    expect(JSON.parse(init!.body as string)).toEqual({
+      title: 'Nuevo',
+      school_year: '2024-2025',
+      group_id: groupB.id,
+      tags: ['amistad', 'oración'],
+    })
+    // La biblioteca se vuelve a pedir
+    await waitFor(() =>
+      expect(documentRequests(fetchMock).length).toBeGreaterThan(listsBefore),
+    )
+  })
+
+  it('elimina un documento tras confirmar', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false)
+    const mine = { ...reunion, can_edit: true }
+    const fetchMock = mockApi(
+      meHandler(admin),
+      documentsHandler([mine]),
+      (url, init) =>
+        url.pathname === `/api/v1/documents/${mine.id}` &&
+        init.method === 'DELETE'
+          ? { status: 204 }
+          : undefined,
+    )
+    renderRoute('/biblioteca/2025-2026/Confirmaci%C3%B3n%20A', { token: 't' })
+    const button = await screen.findByRole('button', {
+      name: 'Eliminar Reunión del perdón',
+    })
+
+    await userEvent.click(button)
+    expect(confirm).toHaveBeenCalledWith(
+      '¿Eliminar «Reunión del perdón» de la biblioteca? No se puede deshacer.',
+    )
+    expect(requests(fetchMock, 'DELETE')).toHaveLength(0)
+
+    confirm.mockReturnValueOnce(true)
+    await userEvent.click(button)
+    await waitFor(() => expect(requests(fetchMock, 'DELETE')).toHaveLength(1))
   })
 })
