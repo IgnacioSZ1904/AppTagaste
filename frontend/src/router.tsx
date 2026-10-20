@@ -8,6 +8,7 @@ import {
   canSeeStats,
   canUseLibrary,
 } from '@/auth/roles'
+import { ErrorPage } from '@/components/ErrorPage'
 import { Layout } from '@/components/Layout'
 import { AttendancePage } from '@/pages/AttendancePage'
 import { GroupPage } from '@/pages/GroupPage'
@@ -22,67 +23,77 @@ import { TermsPage } from '@/pages/TermsPage'
 import { UsersPage } from '@/pages/UsersPage'
 
 export const routes: RouteObject[] = [
-  { path: '/login', element: <LoginPage /> },
-  // Públicas: Google las pide para la pantalla de consentimiento
-  { path: '/privacidad', element: <PrivacyPage /> },
-  { path: '/condiciones', element: <TermsPage /> },
   {
-    element: <RequireAuth />,
+    // Cualquier fallo al cargar o pintar una pantalla muestra ErrorPage
+    errorElement: <ErrorPage />,
     children: [
+      { path: '/login', element: <LoginPage /> },
+      // Públicas: Google las pide para la pantalla de consentimiento
+      { path: '/privacidad', element: <PrivacyPage /> },
+      { path: '/condiciones', element: <TermsPage /> },
       {
-        element: <Layout />,
+        element: <RequireAuth />,
         children: [
           {
-            index: true,
-            // FullCalendar pesa: se descarga solo al entrar en el calendario
-            lazy: async () => ({
-              Component: (await import('@/pages/CalendarPage')).CalendarPage,
-            }),
-          },
-          {
-            element: (
-              <RequireRole
-                allow={canSeeGroups}
-                message="Esta sección es para monitores, coordinadores y administradores."
-              />
-            ),
+            element: <Layout />,
             children: [
-              { path: 'grupos', element: <GroupsPage /> },
-              { path: 'grupos/:id', element: <GroupPage /> },
               {
-                path: 'grupos/:id/eventos/:eventId/lista',
-                element: <AttendancePage />,
+                index: true,
+                // FullCalendar pesa: se descarga solo al entrar en el calendario
+                lazy: async () => ({
+                  Component: (await import('@/pages/CalendarPage'))
+                    .CalendarPage,
+                }),
               },
+              {
+                element: (
+                  <RequireRole
+                    allow={canSeeGroups}
+                    message="Esta sección es para monitores, coordinadores y administradores."
+                  />
+                ),
+                children: [
+                  { path: 'grupos', element: <GroupsPage /> },
+                  { path: 'grupos/:id', element: <GroupPage /> },
+                  {
+                    path: 'grupos/:id/eventos/:eventId/lista',
+                    element: <AttendancePage />,
+                  },
+                ],
+              },
+              {
+                element: (
+                  <RequireRole
+                    allow={canUseLibrary}
+                    message="La biblioteca es para monitores, coordinadores y administradores."
+                  />
+                ),
+                children: [
+                  { path: 'biblioteca', element: <LibraryPage /> },
+                  { path: 'biblioteca/:curso', element: <LibraryPage /> },
+                  {
+                    path: 'biblioteca/:curso/:grupo',
+                    element: <LibraryPage />,
+                  },
+                ],
+              },
+              {
+                element: (
+                  <RequireRole
+                    allow={canSeeStats}
+                    message="Las estadísticas son para coordinadores y administradores."
+                  />
+                ),
+                children: [{ path: 'estadisticas', element: <StatsPage /> }],
+              },
+              {
+                element: <RequireRole allow={canManageUsers} />,
+                children: [{ path: 'usuarios', element: <UsersPage /> }],
+              },
+              { path: 'estado', element: <StatusPage /> },
+              { path: '*', element: <NotFoundPage /> },
             ],
           },
-          {
-            element: (
-              <RequireRole
-                allow={canUseLibrary}
-                message="La biblioteca es para monitores, coordinadores y administradores."
-              />
-            ),
-            children: [
-              { path: 'biblioteca', element: <LibraryPage /> },
-              { path: 'biblioteca/:curso', element: <LibraryPage /> },
-              { path: 'biblioteca/:curso/:grupo', element: <LibraryPage /> },
-            ],
-          },
-          {
-            element: (
-              <RequireRole
-                allow={canSeeStats}
-                message="Las estadísticas son para coordinadores y administradores."
-              />
-            ),
-            children: [{ path: 'estadisticas', element: <StatsPage /> }],
-          },
-          {
-            element: <RequireRole allow={canManageUsers} />,
-            children: [{ path: 'usuarios', element: <UsersPage /> }],
-          },
-          { path: 'estado', element: <StatusPage /> },
-          { path: '*', element: <NotFoundPage /> },
         ],
       },
     ],
