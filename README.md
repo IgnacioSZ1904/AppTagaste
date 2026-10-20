@@ -184,6 +184,14 @@ El texto se saca al subir el documento (PDF y Word). Un PDF escaneado (solo imag
 docker compose exec api python -m app.cli reindex-documents
 ```
 
+## Navegar la biblioteca
+
+En la web, **Biblioteca** muestra una carpeta por **curso** y, dentro, una por **grupo** con sus documentos. Arriba, las migas (Biblioteca › 2025-2026 › Confirmación A) para volver.
+
+- El **buscador** y las **etiquetas** buscan dentro de la carpeta abierta (en la raíz, en toda la biblioteca); **Buscar en toda la biblioteca** quita la carpeta. Los resultados indican curso y grupo y resaltan el trozo encontrado.
+- **Vista previa**: los PDF con el visor del navegador y los Word convertidos en la página (`docx-preview`, se descarga solo al abrir un Word). **Descargar** guarda el fichero con su nombre original.
+- La carpeta y la búsqueda quedan en la URL (`/biblioteca/2025-2026/Confirmación A?q=perdón&tag=dinámica`), así que se puede copiar y compartir.
+
 ## Tests y calidad
 
 Con los contenedores levantados:
