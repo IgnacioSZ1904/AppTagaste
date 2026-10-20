@@ -77,6 +77,7 @@ def test_monitor_anade_un_pdf(upload: Callable[..., dict], monitor: User, group:
         "created_at": document["created_at"],
         "has_text": False,
         "snippet": None,
+        "can_edit": True,
     }
 
 
@@ -315,3 +316,133 @@ def test_reindex_documents(
     # El comando cierra su sesión: se busca directamente en el servicio
     found = documents_service.list_documents(db, q="padres")
     assert [d.id for d, _, _ in found] == [document["id"]]
+
+
+# --- Editar y eliminar ---
+
+
+def test_quien_lo_subio_cambia_titulo_curso_grupo_y_etiquetas(
+    client: TestClient,
+    upload: Callable[..., dict],
+    monitor: User,
+    make_group: Callable[..., Group],
+    search: Callable[..., list[dict]],
+) -> None:
+    document = upload(tags="perdón")
+    other = make_group(name="Postcomunión B")
+
+    response = client.patch(
+        f"{URL}/{document['id']}",
+        json={
+            "title": "  Oración de la mañana ",
+            "school_year": "2024-2025",
+            "group_id": other.id,
+            "tags": ["Amistad", "oración", "amistad"],
+        },
+        headers=auth_headers(monitor),
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["title"] == "Oración de la mañana"
+    assert body["school_year"] == "2024-2025"
+    assert (body["group_id"], body["group_name"]) == (other.id, "Postcomunión B")
+    assert [t["name"] for t in body["tags"]] == ["Amistad", "oración"]
+    # El buscador usa el título y las etiquetas nuevas
+    assert ids_of(search("amistad")) == [document["id"]]
+    assert search("perdon") == []
+
+
+def test_solo_se_cambia_lo_que_se_envia(
+    client: TestClient, upload: Callable[..., dict], monitor: User
+) -> None:
+    document = upload(tags="perdón")
+
+    response = client.patch(
+        f"{URL}/{document['id']}", json={"tags": []}, headers=auth_headers(monitor)
+    )
+
+    assert response.json()["tags"] == []
+    assert response.json()["title"] == document["title"]
+    assert response.json()["group_name"] == document["group_name"]
+
+
+@pytest.mark.parametrize(
+    ("payload", "detail"),
+    [
+        ({"school_year": "2025"}, "Curso escolar no válido"),
+        ({"group_id": 999_999}, "Grupo no encontrado"),
+        ({"title": "   "}, None),
+    ],
+)
+def test_datos_no_validos_dan_422(
+    client: TestClient,
+    upload: Callable[..., dict],
+    monitor: User,
+    payload: dict,
+    detail: str | None,
+) -> None:
+    document = upload()
+
+    response = client.patch(f"{URL}/{document['id']}", json=payload, headers=auth_headers(monitor))
+
+    assert response.status_code == 422
+    if detail:
+        assert response.json()["detail"].startswith(detail)
+
+
+def test_otro_monitor_no_puede_editar_ni_eliminar(
+    client: TestClient, upload: Callable[..., dict], make_user: Callable[..., User]
+) -> None:
+    document = upload()
+    other = make_user(role=Role.MONITOR)
+
+    listed = client.get(URL, headers=auth_headers(other)).json()
+    patch = client.patch(
+        f"{URL}/{document['id']}", json={"title": "X"}, headers=auth_headers(other)
+    )
+    delete = client.delete(f"{URL}/{document['id']}", headers=auth_headers(other))
+
+    assert listed[0]["can_edit"] is False
+    assert patch.status_code == delete.status_code == 403
+
+
+@pytest.mark.parametrize("role", [Role.COORDINADOR, Role.ADMIN])
+def test_coordinador_y_admin_editan_cualquiera(
+    client: TestClient, upload: Callable[..., dict], make_user: Callable[..., User], role: Role
+) -> None:
+    document = upload()
+    user = make_user(role=role)
+
+    response = client.patch(
+        f"{URL}/{document['id']}", json={"title": "Revisado"}, headers=auth_headers(user)
+    )
+
+    assert response.status_code == 200
+    assert response.json()["can_edit"] is True
+
+
+def test_eliminar_borra_el_documento_y_su_fichero(
+    client: TestClient, db: Session, upload: Callable[..., dict], monitor: User
+) -> None:
+    document = upload(drive_file_id="abc123", tags="perdón")
+
+    response = client.delete(f"{URL}/{document['id']}", headers=auth_headers(monitor))
+
+    assert response.status_code == 204
+    db.expire_all()
+    assert db.get(Document, document["id"]) is None
+    assert (
+        client.get(f"{URL}/{document['id']}/file", headers=auth_headers(monitor)).status_code == 404
+    )
+    # Sus etiquetas ya no salen en los filtros y el fichero de Drive se puede volver a añadir
+    filters = client.get(f"{URL}/filters", headers=auth_headers(monitor)).json()
+    assert filters["tags"] == []
+    assert upload(drive_file_id="abc123")["id"]
+
+
+def test_editar_o_eliminar_un_documento_inexistente_da_404(
+    client: TestClient, monitor: User
+) -> None:
+    assert client.patch(f"{URL}/999999", json={}, headers=auth_headers(monitor)).status_code == 404
+    assert client.delete(f"{URL}/999999", headers=auth_headers(monitor)).status_code == 404
