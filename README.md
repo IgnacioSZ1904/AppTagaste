@@ -192,6 +192,21 @@ En la web, **Biblioteca** muestra una carpeta por **curso** y, dentro, una por *
 - **Vista previa**: los PDF con el visor del navegador y los Word convertidos en la página (`docx-preview`, se descarga solo al abrir un Word). **Descargar** guarda el fichero con su nombre original.
 - La carpeta y la búsqueda quedan en la URL (`/biblioteca/2025-2026/Confirmación A?q=perdón&tag=dinámica`), así que se puede copiar y compartir.
 
+## Publicar la app en Google
+
+Mientras la app de Google está en modo **Prueba**, solo entran las cuentas de la lista de usuarios de prueba (las demás ven el error 403 `access_denied`). Para que entre cualquiera, en el proyecto de Google Cloud del login:
+
+1. **Google Auth Platform → Marca**:
+   - Página principal: `https://app-tagaste.vercel.app`
+   - Política de Privacidad: `https://app-tagaste.vercel.app/privacidad`
+   - Condiciones del Servicio: `https://app-tagaste.vercel.app/condiciones`
+   - Dominios autorizados: `app-tagaste.vercel.app`
+   - Email de asistencia y de contacto del desarrollador.
+2. **Google Auth Platform → Público → Publicar app** (pasa a *En producción*). Con solo `drive.file` y el perfil básico no hace falta verificar la app.
+3. Prueba a entrar con una cuenta que no esté en la lista de usuarios de prueba.
+
+Las páginas `/privacidad` y `/condiciones` son públicas (se ven sin iniciar sesión) y están enlazadas desde el login y el pie de la app. Si cambia el responsable de los datos (por ejemplo, el colegio), hay que actualizar `frontend/src/pages/PrivacyPage.tsx`.
+
 ## Tests y calidad
 
 Con los contenedores levantados:
