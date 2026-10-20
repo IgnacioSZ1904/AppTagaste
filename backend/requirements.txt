@@ -8,5 +8,6 @@ google-auth==2.62.0
 requests==2.34.2
 PyJWT==2.15.1
 email-validator==2.3.0
+python-multipart==0.0.32
 tzdata==2026.5
 icalendar==7.3.0

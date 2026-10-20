@@ -79,3 +79,6 @@ def get_monitored_group(group: GroupById, user: CurrentUser) -> Group:
 
 
 MonitoredGroup = Annotated[Group, Depends(get_monitored_group)]
+
+# Biblioteca de recursos: ver, abrir y añadir documentos
+Librarian = Annotated[User, Depends(require_role(Role.ADMIN, Role.COORDINADOR, Role.MONITOR))]

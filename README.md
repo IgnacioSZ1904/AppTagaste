@@ -142,6 +142,21 @@ Asistencia por grupo, por evento y por niño, a partir de los pases de lista. So
 
 Todos aceptan `?from=AAAA-MM-DD&to=AAAA-MM-DD` (incluidos); por defecto, del 1 de septiembre del curso actual a hoy. Entran los eventos del grupo y los generales. Los eventos sin lista pasada no cuentan en el %.
 
+## Biblioteca
+
+Recursos de reuniones y convivencias de todos los cursos. Cada documento lleva **curso escolar** (`2025-2026`), **grupo** (se elige entre los existentes y se guarda su nombre, para que siga clasificado aunque el grupo se borre) y **etiquetas** por temática. Son de **solo lectura**: se editan en Drive y se suben terminados. La app guarda una copia del fichero, así que no se pierde aunque se borre de Drive.
+
+| Endpoint | Qué hace |
+|----------|----------|
+| `POST /api/v1/documents` (multipart: `file`, `school_year`, `group_id`, `title`, `tags`) | Añade un documento. `tags` separadas por comas; las nuevas se crean ("Perdón" = "perdon") |
+| `GET /api/v1/documents?school_year=&group=&tag=` | Lista sin el fichero. Varias `tag` = los que tienen todas |
+| `GET /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/file` | Datos del documento y su copia (se abre en el navegador) |
+| `GET /api/v1/documents/filters`, `GET /api/v1/tags` | Cursos, grupos y etiquetas usados; todas las etiquetas |
+
+Solo para admin, coordinadores y monitores. Se admiten **PDF y Word (.docx)** de hasta **10 MB** (se comprueba el contenido, no solo el nombre).
+
+**Espacio:** los ficheros van en la base de datos y Neon gratis tiene 0,5 GB. Para ver lo que ocupan: `SELECT pg_size_pretty(pg_total_relation_size('document_files'));`
+
 ## Tests y calidad
 
 Con los contenedores levantados:

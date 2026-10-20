@@ -160,3 +160,28 @@ def test_stats_only_for_admin_and_coordinators(
 
     for response in (summary, detail, export):
         assert response.status_code == (200 if allowed else 403)
+
+
+@pytest.mark.parametrize("role", list(Role))
+def test_library_for_admin_coordinators_and_monitors(
+    client: TestClient, db: Session, make_user: Callable[..., User], role: Role
+) -> None:
+    group = Group(name="Grupo")
+    db.add(group)
+    db.commit()
+    headers = auth_headers(make_user(role=role))
+    allowed = role != Role.USUARIO
+
+    upload = client.post(
+        "/api/v1/documents",
+        data={"school_year": "2025-2026", "group_id": group.id},
+        files={"file": ("a.pdf", b"%PDF-1.4\n", "application/pdf")},
+        headers=headers,
+    )
+    listing = client.get("/api/v1/documents", headers=headers)
+    filters = client.get("/api/v1/documents/filters", headers=headers)
+    tags = client.get("/api/v1/tags", headers=headers)
+
+    assert upload.status_code == (201 if allowed else 403)
+    for response in (listing, filters, tags):
+        assert response.status_code == (200 if allowed else 403)
