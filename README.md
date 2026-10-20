@@ -157,6 +157,18 @@ Solo para admin, coordinadores y monitores. Se admiten **PDF y Word (.docx)** de
 
 **Espacio:** los ficheros van en la base de datos y Neon gratis tiene 0,5 GB. Para ver lo que ocupan: `SELECT pg_size_pretty(pg_total_relation_size('document_files'));`
 
+## Añadir documentos desde Drive
+
+En la web, **Biblioteca → Añadir desde Drive**: se da permiso a la app (solo para los ficheros que elijas, permiso `drive.file`), se eligen uno o varios Google Docs, PDF o Word y se indican curso, grupo y etiquetas. El navegador descarga cada fichero de Drive (los Google Docs como .docx) y lo sube a `POST /api/v1/documents` con su `drive_file_id`: el token de Drive nunca llega a la API. Un fichero de Drive que ya está en la biblioteca da **409**. También se puede **Subir desde el ordenador**.
+
+Configuración en Google Cloud (el mismo proyecto del login con Google):
+
+1. **APIs y servicios → Biblioteca:** activa **Google Picker API** y **Google Drive API**.
+2. **Credenciales → Crear credenciales → Clave de API.** Restringe la clave a los sitios web `http://localhost:5173/*` y `https://app-tagaste.vercel.app/*`, y a la **Google Picker API**.
+3. **Pantalla de consentimiento de OAuth → Acceso a datos:** añade el permiso `.../auth/drive.file`.
+4. Copia el **número del proyecto** (panel principal del proyecto).
+5. En `frontend/.env` y en Vercel (**Settings → Environment Variables**): `VITE_GOOGLE_API_KEY` = la clave y `VITE_GOOGLE_APP_ID` = el número del proyecto. En Vercel, vuelve a desplegar para que se apliquen.
+
 ## Tests y calidad
 
 Con los contenedores levantados:

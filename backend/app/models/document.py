@@ -47,7 +47,8 @@ class Document(Base):
     filename: Mapped[str] = mapped_column(String(255))
     mime_type: Mapped[str] = mapped_column(String(100))
     size: Mapped[int] = mapped_column(Integer)
-    drive_file_id: Mapped[str | None] = mapped_column(String(100))
+    # Único: un fichero de Drive solo se añade una vez (los subidos del ordenador lo tienen vacío)
+    drive_file_id: Mapped[str | None] = mapped_column(String(100), unique=True)
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

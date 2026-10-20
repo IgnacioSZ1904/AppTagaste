@@ -20,6 +20,9 @@ def create_document(
     group_id: Annotated[int, Form()],
     title: Annotated[str | None, Form(description="Por defecto, el nombre del fichero")] = None,
     tags: Annotated[str, Form(description="Etiquetas separadas por comas")] = "",
+    drive_file_id: Annotated[
+        str | None, Form(description="Id del fichero en Drive, si viene de allí")
+    ] = None,
 ) -> dict:
     # Se lee un byte de más para saber si pasa del límite sin cargar ficheros enormes
     content = file.file.read(documents_service.MAX_SIZE + 1)
@@ -33,7 +36,13 @@ def create_document(
             school_year=school_year,
             group_id=group_id,
             tag_names=tags.split(","),
+            drive_file_id=drive_file_id,
         )
+    except documents_service.DuplicateDriveFileError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya está en la biblioteca: «{error.existing.title}»",
+        ) from None
     except documents_service.FileTooLargeError:
         raise HTTPException(
             status_code=status.HTTP_413_CONTENT_TOO_LARGE,

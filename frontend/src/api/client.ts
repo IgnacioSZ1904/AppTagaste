@@ -12,7 +12,8 @@ export class ApiError extends Error {
   }
 }
 
-type ApiInit = Omit<RequestInit, 'body'> & { json?: unknown }
+/** `json` para enviar JSON; `form` para enviar ficheros (multipart). */
+type ApiInit = Omit<RequestInit, 'body'> & { json?: unknown; form?: FormData }
 
 /**
  * Llama a la API y devuelve el JSON (o undefined si no hay cuerpo).
@@ -20,7 +21,7 @@ type ApiInit = Omit<RequestInit, 'body'> & { json?: unknown }
  */
 export async function apiFetch<T>(
   path: string,
-  { json, headers, ...init }: ApiInit = {},
+  { json, form, headers, ...init }: ApiInit = {},
 ): Promise<T> {
   const token = getToken()
   let response: Response
@@ -28,11 +29,12 @@ export async function apiFetch<T>(
     response = await fetch(`${API_URL}${path}`, {
       ...init,
       headers: {
-        'Content-Type': 'application/json',
+        // Con FormData el navegador pone el Content-Type con su separador
+        ...(form ? {} : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
-      body: json === undefined ? undefined : JSON.stringify(json),
+      body: form ?? (json === undefined ? undefined : JSON.stringify(json)),
     })
   } catch {
     throw new ApiError(0, 'No se puede conectar con la API')
