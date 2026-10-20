@@ -4,13 +4,16 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     LargeBinary,
     String,
     Table,
+    Text,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.orm import Mapped, deferred, mapped_column, relationship
 
 from app.db.base import Base
 from app.models.user import User
@@ -37,6 +40,7 @@ class Document(Base):
     """Recurso de la biblioteca, de solo lectura: se edita en Drive y se sube terminado."""
 
     __tablename__ = "documents"
+    __table_args__ = (Index("ix_documents_search_vector", "search_vector", postgresql_using="gin"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(200))
@@ -51,6 +55,10 @@ class Document(Base):
     drive_file_id: Mapped[str | None] = mapped_column(String(100), unique=True)
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Texto extraído para el buscador; vacío = sin texto (p. ej. PDF escaneado)
+    content_text: Mapped[str | None] = deferred(mapped_column(Text))
+    # Lo calcula services.documents.index_document: título y etiquetas pesan más que el texto
+    search_vector: Mapped[str | None] = deferred(mapped_column(TSVECTOR))
 
     created_by: Mapped[User | None] = relationship(lazy="selectin")
     tags: Mapped[list[Tag]] = relationship(
