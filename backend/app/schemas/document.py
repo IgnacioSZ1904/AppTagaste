@@ -22,6 +22,10 @@ class DocumentRead(BaseModel):
     tags: list[TagRead]
     created_by: str | None
     created_at: LocalDateTime
+    # False: no se pudo sacar texto (p. ej. PDF escaneado) y solo se busca por título y etiquetas
+    has_text: bool
+    # Solo al buscar: trozo del texto con lo encontrado entre <mark> y </mark>
+    snippet: str | None = None
 
 
 class LibraryFilters(BaseModel):

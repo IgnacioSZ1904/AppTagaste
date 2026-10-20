@@ -5,17 +5,32 @@ import zipfile
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import Select, select
+from sqlalchemy import ColumnElement, Select, func, literal, select, text
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models.document import Document, DocumentFile, Tag, document_tags
 from app.models.group import Group
 from app.models.user import User
+from app.services.text_extraction import DOCX, PDF, extract_text
 
 MAX_SIZE = 10 * 1024 * 1024
-PDF = "application/pdf"
-DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+# Español sin tildes (migración 0010): "perdon" encuentra "perdón" y "perdonar"
+SEARCH_CONFIG = "es_unaccent"
+SNIPPET_OPTIONS = "StartSel=<mark>, StopSel=</mark>, MinWords=10, MaxWords=30"
+# Título y etiquetas (A) pesan más que el texto (C)
+UPDATE_SEARCH_VECTOR = text(
+    """
+    UPDATE documents AS d SET search_vector =
+        setweight(to_tsvector('es_unaccent', d.title), 'A')
+        || setweight(to_tsvector('es_unaccent', coalesce((
+            SELECT string_agg(t.name, ' ') FROM tags AS t
+            JOIN document_tags AS dt ON dt.tag_id = t.id
+            WHERE dt.document_id = d.id), '')), 'A')
+        || setweight(to_tsvector('es_unaccent', coalesce(d.content_text, '')), 'C')
+    WHERE d.id = :id
+    """
+)
 
 
 class FileTooLargeError(Exception):
@@ -128,9 +143,39 @@ def create_document(
         file=DocumentFile(content=content),
     )
     db.add(document)
+    index_document(db, document, content)
     db.commit()
     db.refresh(document)
     return document
+
+
+def index_document(db: Session, document: Document, content: bytes) -> None:
+    """Extrae el texto del fichero y actualiza el índice del buscador."""
+    document.content_text = extract_text(content, document.mime_type)
+    db.flush()
+    db.execute(UPDATE_SEARCH_VECTOR, {"id": document.id})
+
+
+def reindex_all(db: Session) -> tuple[int, int]:
+    """Vuelve a indexar todos los documentos. Devuelve (total, sin texto)."""
+    total = without_text = 0
+    for document in db.scalars(select(Document).order_by(Document.id)):
+        index_document(db, document, document.file.content)
+        db.commit()
+        total += 1
+        without_text += not document.content_text
+    return total, without_text
+
+
+def search_query(q: str) -> ColumnElement:
+    """Palabras sin tildes y con variantes, "frase exacta" y la última palabra empezada."""
+    q = q.strip()
+    last = re.search(r"(?<![-\w])[^\W_]+$", q)
+    if q.endswith('"') or last is None or last[0].lower() == "or":
+        return func.websearch_to_tsquery(SEARCH_CONFIG, q)
+    return func.websearch_to_tsquery(SEARCH_CONFIG, q[: last.start()]).op("&&")(
+        func.to_tsquery(SEARCH_CONFIG, literal(last[0] + ":*"))
+    )
 
 
 def list_documents(
@@ -138,8 +183,22 @@ def list_documents(
     school_year: str | None = None,
     group_name: str | None = None,
     tag_names: list[str] | None = None,
-) -> list[Document]:
-    query: Select[tuple[Document]] = select(Document)
+    q: str | None = None,
+) -> list[tuple[Document, bool, str | None]]:
+    """(documento, tiene texto, fragmento). Con `q`, ordenados por relevancia."""
+    text_found = func.coalesce(Document.content_text, "") != ""
+    if q and q.strip():
+        tsquery = search_query(q)
+        snippet = func.ts_headline(
+            SEARCH_CONFIG, func.coalesce(Document.content_text, ""), tsquery, SNIPPET_OPTIONS
+        )
+        query: Select = (
+            select(Document, text_found, snippet)
+            .where(Document.search_vector.op("@@")(tsquery))
+            .order_by(func.ts_rank(Document.search_vector, tsquery).desc())
+        )
+    else:
+        query = select(Document, text_found, literal(None))
     if school_year:
         query = query.where(Document.school_year == school_year)
     if group_name:
@@ -147,7 +206,8 @@ def list_documents(
     # Varias etiquetas: los documentos que tienen todas
     for slug in {slugify(t) for t in tag_names or [] if slugify(t)}:
         query = query.where(Document.tags.any(Tag.slug == slug))
-    return list(db.scalars(query.order_by(Document.created_at.desc(), Document.id.desc())))
+    rows = db.execute(query.order_by(Document.created_at.desc(), Document.id.desc()))
+    return [(document, found, snippet or None) for document, found, snippet in rows]
 
 
 def library_filters(db: Session) -> dict:
@@ -169,7 +229,7 @@ def list_tags(db: Session) -> list[Tag]:
     return list(db.scalars(select(Tag).order_by(Tag.slug)))
 
 
-def to_read(document: Document) -> dict:
+def to_read(document: Document, text_found: bool, snippet: str | None = None) -> dict:
     return {
         "id": document.id,
         "title": document.title,
@@ -182,4 +242,6 @@ def to_read(document: Document) -> dict:
         "tags": document.tags,
         "created_by": document.created_by.full_name if document.created_by else None,
         "created_at": document.created_at,
+        "has_text": text_found,
+        "snippet": snippet,
     }

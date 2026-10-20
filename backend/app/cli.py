@@ -3,6 +3,7 @@
 Uso (dentro del contenedor):
     python -m app.cli create-admin --email ana@ejemplo.com --name "Ana López"
     python -m app.cli dev-token --email ana@ejemplo.com
+    python -m app.cli reindex-documents
 """
 
 import argparse
@@ -13,6 +14,7 @@ from app.core.security import create_access_token
 from app.db.session import SessionLocal
 from app.models.user import Role
 from app.schemas.user import UserCreate, UserUpdate
+from app.services import documents as documents_service
 from app.services import users as users_service
 
 
@@ -43,6 +45,14 @@ def dev_token(email: str) -> int:
     return 0
 
 
+def reindex_documents() -> int:
+    """Vuelve a extraer el texto de la biblioteca y rehace el índice del buscador."""
+    with SessionLocal() as db:
+        total, without_text = documents_service.reindex_all(db)
+    print(f"Documentos indexados: {total} ({without_text} sin texto)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -54,9 +64,13 @@ def main(argv: list[str] | None = None) -> int:
     token = sub.add_parser("dev-token", help="Genera un token para probar en /docs")
     token.add_argument("--email", required=True)
 
+    sub.add_parser("reindex-documents", help="Rehace el índice del buscador de la biblioteca")
+
     args = parser.parse_args(argv)
     if args.command == "create-admin":
         return create_admin(args.email, args.name)
+    if args.command == "reindex-documents":
+        return reindex_documents()
     return dev_token(args.email)
 
 
