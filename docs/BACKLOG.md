@@ -52,6 +52,12 @@ Los documentos se eligen del Drive de cada uno desde la app (selector de Google,
 | 17 | `biblioteca-frontend` | P1 | [x] | Navegar por curso y por grupo, filtro por etiquetas, buscador y abrir o descargar el documento |
 | 18 | `etiquetas-con-llm` | P2 | [ ] | Sugerencia automática de etiquetas |
 
+## Publicación
+
+| # | Feature | Prioridad | Estado | Notas |
+|---|---------|-----------|--------|-------|
+| 22 | `paginas-legales` | P0 | [x] | Páginas públicas `/privacidad` y `/condiciones` (RGPD, menores, Uso limitado de Google), login como página principal y guía para publicar la app de Google (salir del modo Prueba) |
+
 ## Transversal (se va haciendo en cada feature)
 
 - [ ] Logging y gestión de errores homogénea
