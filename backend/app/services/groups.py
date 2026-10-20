@@ -1,28 +1,29 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.errors import ConflictError, NotFoundError, UnprocessableError
 from app.models.group import GROUP_MEMBER_ROLES, Child, Group, group_members
 from app.models.user import User
 
 
-class GroupNameTakenError(Exception):
-    pass
+class GroupNameTakenError(ConflictError):
+    detail = "Ya existe un grupo con ese nombre"
 
 
-class UserNotFoundError(Exception):
-    pass
+class UserNotFoundError(NotFoundError):
+    detail = "Usuario no encontrado"
 
 
-class InvalidMemberRoleError(Exception):
-    """Solo monitores y coordinadores pueden ser responsables de un grupo."""
+class InvalidMemberRoleError(UnprocessableError):
+    detail = "Solo monitores y coordinadores pueden ser responsables de un grupo"
 
 
-class AlreadyMemberError(Exception):
-    pass
+class AlreadyMemberError(ConflictError):
+    detail = "Ya es responsable de este grupo"
 
 
-class NotMemberError(Exception):
-    pass
+class NotMemberError(NotFoundError):
+    detail = "No es responsable de este grupo"
 
 
 def list_groups(db: Session) -> list[Group]:
@@ -44,7 +45,7 @@ def _check_name_free(db: Session, name: str, exclude_id: int | None = None) -> N
     if exclude_id is not None:
         query = query.where(Group.id != exclude_id)
     if db.scalar(query) is not None:
-        raise GroupNameTakenError(name)
+        raise GroupNameTakenError()
 
 
 def create_group(db: Session, name: str) -> Group:
@@ -72,11 +73,11 @@ def delete_group(db: Session, group: Group) -> None:
 def add_member(db: Session, group: Group, user_id: int) -> Group:
     user = db.get(User, user_id)
     if user is None:
-        raise UserNotFoundError(user_id)
+        raise UserNotFoundError()
     if user.role not in GROUP_MEMBER_ROLES:
-        raise InvalidMemberRoleError(user.role)
+        raise InvalidMemberRoleError()
     if user in group.members:
-        raise AlreadyMemberError(user_id)
+        raise AlreadyMemberError()
     group.members.append(user)
     db.commit()
     db.refresh(group)
@@ -86,7 +87,7 @@ def add_member(db: Session, group: Group, user_id: int) -> Group:
 def remove_member(db: Session, group: Group, user_id: int) -> None:
     user = next((m for m in group.members if m.id == user_id), None)
     if user is None:
-        raise NotMemberError(user_id)
+        raise NotMemberError()
     group.members.remove(user)
     db.commit()
 

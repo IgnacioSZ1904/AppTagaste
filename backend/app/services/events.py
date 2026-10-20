@@ -3,22 +3,23 @@ from datetime import datetime
 from sqlalchemy import ColumnElement, or_, select
 from sqlalchemy.orm import Session
 
+from app.core.errors import UnprocessableError
 from app.models.event import Event, EventType
 from app.models.group import Group
 from app.models.user import User
 from app.schemas.event import EventCreate, EventUpdate
 
 
-class InvalidEventRangeError(Exception):
-    """La fecha de fin no es posterior a la de inicio."""
+class InvalidEventRangeError(UnprocessableError):
+    detail = "La fecha de fin debe ser posterior a la de inicio"
 
 
-class UnknownGroupError(Exception):
+class UnknownGroupError(UnprocessableError):
     """Alguno de los grupos indicados no existe."""
 
     def __init__(self, group_ids: list[int]) -> None:
-        super().__init__(group_ids)
         self.group_ids = group_ids
+        super().__init__("No existe el grupo: " + ", ".join(str(i) for i in group_ids))
 
 
 def in_group(group_id: int) -> ColumnElement[bool]:

@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     database_url: str
     # Zona horaria de los eventos: las fechas sin zona se interpretan en ella
     timezone: str = "Europe/Madrid"
+    # DEBUG, INFO, WARNING… (DEBUG también registra las peticiones a /health)
+    log_level: str = "INFO"
 
     # Autenticación
     secret_key: str = DEV_SECRET_KEY
