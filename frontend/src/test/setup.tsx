@@ -18,6 +18,8 @@ vi.mock('@react-oauth/google', () => ({
       Iniciar sesión con Google
     </button>
   ),
+  // Permiso de Drive: en los tests no se abre la ventana de Google
+  useGoogleLogin: () => () => {},
 }))
 
 beforeEach(() => {
