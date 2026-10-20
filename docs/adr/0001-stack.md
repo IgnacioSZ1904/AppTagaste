@@ -8,7 +8,7 @@
 App web pequeña (un colegio, decenas de usuarios) hecha por una sola persona, que además sirve de portfolio para un puesto junior. Tiene que poder desplegarse gratis y crecer por módulos (calendario, grupos, biblioteca).
 
 ## Decisión
-- **Backend:** Python 3.13, FastAPI, SQLAlchemy 2 (síncrono), Alembic y Pydantic. Capas `api` → `services` → `models`.
+- **Backend:** Python 3.12, FastAPI, SQLAlchemy 2 (síncrono), Alembic y Pydantic. Capas `api` → `services` → `models`.
 - **Base de datos:** PostgreSQL (también para el buscador, ver [0008](0008-buscador-postgresql.md)).
 - **Frontend:** React 19 + TypeScript con Vite, Tailwind 4, React Router y TanStack Query.
 - **Calidad:** pytest y ruff; Vitest, Testing Library, oxlint y Prettier; GitHub Actions. Todo en Docker Compose en local.
