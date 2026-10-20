@@ -1,18 +1,26 @@
 from typing import Annotated
 from urllib.parse import quote
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, Response, UploadFile, status
+from fastapi import APIRouter, File, Form, Query, Response, UploadFile, status
 
 from app.api.deps import DbSession, Librarian
+from app.core.errors import ForbiddenError, NotFoundError
+from app.core.openapi import errors
 from app.models.document import Document
 from app.models.user import User
 from app.schemas.document import DocumentRead, DocumentUpdate, LibraryFilters, TagRead
 from app.services import documents as documents_service
 
-router = APIRouter(tags=["documents"])
+router = APIRouter(tags=["documents"], responses=errors(401, 403, 422))
 
 
-@router.post("/documents", response_model=DocumentRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/documents",
+    response_model=DocumentRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Añadir un documento",
+    responses=errors(409, 413),
+)
 def create_document(
     db: DbSession,
     user: Librarian,
@@ -27,46 +35,21 @@ def create_document(
 ) -> dict:
     # Se lee un byte de más para saber si pasa del límite sin cargar ficheros enormes
     content = file.file.read(documents_service.MAX_SIZE + 1)
-    try:
-        document = documents_service.create_document(
-            db,
-            user,
-            content=content,
-            filename=file.filename or "documento",
-            title=title,
-            school_year=school_year,
-            group_id=group_id,
-            tag_names=tags.split(","),
-            drive_file_id=drive_file_id,
-        )
-    except documents_service.DuplicateDriveFileError as error:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Ya está en la biblioteca: «{error.existing.title}»",
-        ) from None
-    except documents_service.FileTooLargeError:
-        raise HTTPException(
-            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-            detail="El fichero no puede pasar de 10 MB",
-        ) from None
-    except documents_service.UnsupportedFileError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Solo se admiten PDF y Word (.docx)",
-        ) from None
-    except documents_service.InvalidSchoolYearError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Curso escolar no válido (formato 2025-2026, no posterior al actual)",
-        ) from None
-    except documents_service.UnknownGroupError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Grupo no encontrado"
-        ) from None
+    document = documents_service.create_document(
+        db,
+        user,
+        content=content,
+        filename=file.filename or "documento",
+        title=title,
+        school_year=school_year,
+        group_id=group_id,
+        tag_names=tags.split(","),
+        drive_file_id=drive_file_id,
+    )
     return documents_service.to_read(document, user, bool(document.content_text))
 
 
-@router.get("/documents", response_model=list[DocumentRead])
+@router.get("/documents", response_model=list[DocumentRead], summary="Listar y buscar documentos")
 def list_documents(
     db: DbSession,
     user: Librarian,
@@ -89,7 +72,9 @@ def list_documents(
 
 
 # Antes de /documents/{document_id} para que "filters" no se tome como id
-@router.get("/documents/filters", response_model=LibraryFilters)
+@router.get(
+    "/documents/filters", response_model=LibraryFilters, summary="Cursos, grupos y etiquetas usados"
+)
 def library_filters(db: DbSession, _: Librarian) -> dict:
     return documents_service.library_filters(db)
 
@@ -97,11 +82,16 @@ def library_filters(db: DbSession, _: Librarian) -> dict:
 def get_document_or_404(document_id: int, db: DbSession) -> Document:
     document = db.get(Document, document_id)
     if document is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento no encontrado")
+        raise NotFoundError("Documento no encontrado")
     return document
 
 
-@router.get("/documents/{document_id}", response_model=DocumentRead)
+@router.get(
+    "/documents/{document_id}",
+    response_model=DocumentRead,
+    summary="Ver un documento",
+    responses=errors(404),
+)
 def get_document(document_id: int, db: DbSession, user: Librarian) -> dict:
     document = get_document_or_404(document_id, db)
     return documents_service.to_read(document, user, bool(document.content_text))
@@ -110,40 +100,37 @@ def get_document(document_id: int, db: DbSession, user: Librarian) -> dict:
 def editable_document_or_403(document_id: int, db: DbSession, user: User) -> Document:
     document = get_document_or_404(document_id, db)
     if not documents_service.can_edit(user, document):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo quien lo subió, los coordinadores y el admin pueden cambiarlo",
-        )
+        raise ForbiddenError("Solo quien lo subió, los coordinadores y el admin pueden cambiarlo")
     return document
 
 
-@router.patch("/documents/{document_id}", response_model=DocumentRead)
+@router.patch(
+    "/documents/{document_id}",
+    response_model=DocumentRead,
+    summary="Editar título, curso, grupo o etiquetas",
+    responses=errors(404),
+)
 def update_document(
     document_id: int, payload: DocumentUpdate, db: DbSession, user: Librarian
 ) -> dict:
     document = editable_document_or_403(document_id, db, user)
-    try:
-        documents_service.update_document(
-            db,
-            document,
-            title=payload.title,
-            school_year=payload.school_year,
-            group_id=payload.group_id,
-            tag_names=payload.tags,
-        )
-    except documents_service.InvalidSchoolYearError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Curso escolar no válido (formato 2025-2026, no posterior al actual)",
-        ) from None
-    except documents_service.UnknownGroupError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Grupo no encontrado"
-        ) from None
+    documents_service.update_document(
+        db,
+        document,
+        title=payload.title,
+        school_year=payload.school_year,
+        group_id=payload.group_id,
+        tag_names=payload.tags,
+    )
     return documents_service.to_read(document, user, bool(document.content_text))
 
 
-@router.delete("/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/documents/{document_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar un documento",
+    responses=errors(404),
+)
 def delete_document(document_id: int, db: DbSession, user: Librarian) -> None:
     documents_service.delete_document(db, editable_document_or_403(document_id, db, user))
 
@@ -151,7 +138,11 @@ def delete_document(document_id: int, db: DbSession, user: Librarian) -> None:
 @router.get(
     "/documents/{document_id}/file",
     response_class=Response,
-    responses={200: {"content": {"application/pdf": {}}, "description": "Copia del fichero"}},
+    summary="Abrir la copia del fichero",
+    responses={
+        200: {"content": {"application/pdf": {}}, "description": "Copia del fichero"},
+        **errors(404),
+    },
 )
 def document_file(document_id: int, db: DbSession, _: Librarian) -> Response:
     document = get_document_or_404(document_id, db)
@@ -163,6 +154,6 @@ def document_file(document_id: int, db: DbSession, _: Librarian) -> Response:
     )
 
 
-@router.get("/tags", response_model=list[TagRead])
+@router.get("/tags", response_model=list[TagRead], summary="Listar todas las etiquetas")
 def list_tags(db: DbSession, _: Librarian) -> list:
     return documents_service.list_tags(db)
