@@ -149,7 +149,7 @@ Recursos de reuniones y convivencias de todos los cursos. Cada documento lleva *
 | Endpoint | Qué hace |
 |----------|----------|
 | `POST /api/v1/documents` (multipart: `file`, `school_year`, `group_id`, `title`, `tags`) | Añade un documento. `tags` separadas por comas; las nuevas se crean ("Perdón" = "perdon") |
-| `GET /api/v1/documents?school_year=&group=&tag=` | Lista sin el fichero. Varias `tag` = los que tienen todas |
+| `GET /api/v1/documents?school_year=&group=&tag=&q=` | Lista sin el fichero. Varias `tag` = los que tienen todas. `q` = buscador (abajo) |
 | `GET /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/file` | Datos del documento y su copia (se abre en el navegador) |
 | `GET /api/v1/documents/filters`, `GET /api/v1/tags` | Cursos, grupos y etiquetas usados; todas las etiquetas |
 
@@ -168,6 +168,21 @@ Configuración en Google Cloud (el mismo proyecto del login con Google):
 3. **Pantalla de consentimiento de OAuth → Acceso a datos:** añade el permiso `.../auth/drive.file`.
 4. Copia el **número del proyecto** (panel principal del proyecto).
 5. En `frontend/.env` y en Vercel (**Settings → Environment Variables**): `VITE_GOOGLE_API_KEY` = la clave y `VITE_GOOGLE_APP_ID` = el número del proyecto. En Vercel, vuelve a desplegar para que se apliquen.
+
+## Buscador
+
+`GET /api/v1/documents?q=...` busca en el **título**, las **etiquetas** y el **texto** de los documentos (título y etiquetas pesan más) y los ordena por relevancia. Se combina con `school_year`, `group` y `tag`.
+
+- Sin tildes ni mayúsculas y con variantes: `perdon` encuentra "Perdón" y "perdonar".
+- Varias palabras = los que tienen todas; `"oración de la mañana"` entre comillas = frase exacta.
+- La última palabra vale empezada: `dinam` encuentra "dinámica".
+- Cada resultado trae `snippet`: un trozo del texto con lo encontrado entre `<mark>` y `</mark>`.
+
+El texto se saca al subir el documento (PDF y Word). Un PDF escaneado (solo imagen) se guarda igual con `has_text: false` y solo se encuentra por título y etiquetas. Para rehacer el índice de todos los documentos:
+
+```bash
+docker compose exec api python -m app.cli reindex-documents
+```
 
 ## Tests y calidad
 
